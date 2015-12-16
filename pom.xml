@@ -205,6 +205,11 @@
 			<layout>default</layout>
 		</repository>
 
+		<repository>
+			<id>anayticom</id>
+			<url>http://repository.analyticom.de/maven/</url>
+		</repository>
+
     </repositories>
 
     <build>

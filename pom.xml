@@ -196,6 +196,17 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+
+    <repository>
+			<id>prime-repo</id>
+			<name>PrimeFaces Maven Repository</name>
+			<url>http://repository.primefaces.org</url>
+			<layout>default</layout>
+		</repository>
+
+    </repositories>
+
     <build>
         <defaultGoal>install</defaultGoal>
 
@@ -501,11 +512,15 @@
 		</extensions>
     </build>
 
+
     <distributionManagement>
 		<repository>
 			<id>analyticom</id>
 			<url>dav:http://repository.analyticom.de/maven/</url>
 		</repository>
+
+
+
 	</distributionManagement>
 
     <profiles>
@@ -574,6 +589,7 @@
                         <version>2.9.1</version>
                         <configuration>
                             <sourcepath>${basedir}/src/main/java;${basedir}/target/generated-sources/maven-jsf-plugin</sourcepath>
+                            <javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
                         </configuration>
                         <executions>
                             <execution>
@@ -746,7 +762,7 @@
                     <plugin>
                         <groupId>org.primefaces</groupId>
                         <artifactId>maven-jsf-plugin</artifactId>
-                        <version>1.3.2</version>
+                        <version>1.3.3-SNAPSHOT</version>
                         <executions>
                             <execution>
                                 <id>css-compressor</id>

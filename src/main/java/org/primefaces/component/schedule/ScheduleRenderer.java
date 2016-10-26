@@ -87,10 +87,10 @@ public class ScheduleRenderer extends CoreRenderer {
 	
 	protected void encodeEventsAsJSON(FacesContext context, Schedule schedule, ScheduleModel model) throws IOException {
 		ResponseWriter writer = context.getResponseWriter();
-        TimeZone timeZone = schedule.calculateTimeZone();
+        //TimeZone timeZone = schedule.calculateTimeZone();
 
-        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        iso.setTimeZone(timeZone);
+        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        //iso.setTimeZone(timeZone);
         writer.write("{");
         writer.write("\"events\" : [");
 		

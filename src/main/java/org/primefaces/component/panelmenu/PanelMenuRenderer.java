@@ -27,7 +27,7 @@ import org.primefaces.model.menu.MenuItem;
 import org.primefaces.model.menu.Submenu;
 import org.primefaces.util.WidgetBuilder;
 import org.primefaces.component.menu.Menu;
-
+import org.primefaces.model.menu.Separator;
 
 public class PanelMenuRenderer extends BaseMenuRenderer {
 

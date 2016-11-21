@@ -213,6 +213,9 @@ public class PanelMenuRenderer extends BaseMenuRenderer {
                     else if(element instanceof Submenu) {
                         encodeDescendantSubmenu(context, menu, (Submenu) element);
                     }
+                    else if(element instanceof Separator) {
+                        encodeSeparator(context, (Separator) element);
+                    }
                 }
             }
 

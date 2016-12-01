@@ -202,7 +202,7 @@ PrimeFaces.widget.Dialog = PrimeFaces.widget.BaseWidget.extend({
 		}
 		catch(err)
 		{
-			console.log('AALYTICOM - Always put modal dialog in center of the viewscreen: '+err.message);
+			console.log('ANALYTICOM - Always put modal dialog in center of the viewscreen: '+err.message);
 		}
     },
 

@@ -190,8 +190,9 @@ PrimeFaces.widget.Dialog = PrimeFaces.widget.BaseWidget.extend({
          * @commentedBy mbaricevic 2016-12-01
          * always put modal dialog in center of the viewscreen
          */
+
         try {
-			if (this.cfg.modal  && (typeof DIALOG_POSITION !== "undefined" ) && DIALOG_POSITION === "central")
+			if (this.cfg.modal  && (typeof DIALOG_POSITION !== "undefined" ) && DIALOG_POSITION === "central" && (this.cfg.position==null || this.cfg.position=='' || this.cfg.position=='center'))
 				{
 				this.jq.css({
 					'top': (Math.max(0,(($(window).height() - this.jq.outerHeight()) / 2)))+'px !important',

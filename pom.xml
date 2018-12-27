@@ -11,7 +11,7 @@
     <groupId>org.primefaces</groupId>
     <artifactId>primefaces</artifactId>
     <packaging>jar</packaging>
-    <version>5.4.0-patch-5</version>
+    <version>5.4.0-patch-6</version>
     <name>primefaces</name>
     <url>http://www.primefaces.org</url>
 
@@ -595,6 +595,7 @@
                         <configuration>
                             <sourcepath>${basedir}/src/main/java;${basedir}/target/generated-sources/maven-jsf-plugin</sourcepath>
                             <javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
+                            <failOnError>false</failOnError>
                         </configuration>
                         <executions>
                             <execution>

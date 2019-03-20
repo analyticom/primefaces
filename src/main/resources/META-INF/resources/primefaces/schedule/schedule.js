@@ -9925,6 +9925,7 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
                 if(event.description) {
                     $this.tipTimeout = setTimeout(function() {
                         $this.tip.css({
+							'position': 'fixed',
                             'left': jsEvent.pageX,
                             'top': jsEvent.pageY + 15,
                             'z-index': ++PrimeFaces.zindex

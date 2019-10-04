@@ -9927,7 +9927,7 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
                         $this.tip.css({
 							'position': 'fixed',
                             'left': jsEvent.pageX,
-                            'top': jsEvent.pageY + 15,
+                            'top': jsEvent.pageY - window.pageYOffset + 15,
                             'z-index': ++PrimeFaces.zindex
                         })
                         .html(event.description)

@@ -2678,9 +2678,9 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
             update: function(event, ui) {
                 // COMET-1596 toIndex contains expanded rows and they should be excluded as they are not part of same data set
                 var fromIndex = ui.item.data('ri'),
-                    first = this.paginator ? this.paginator.getFirst(): 0;
+                    first = $this.paginator ? $this.paginator.getFirst(): 0;
 
-                var rows = this.tbody.children('tr.ui-widget-content');
+                var rows = $this.tbody.children('tr.ui-widget-content');
                 var toIndex = first + ui.item.index();
 
                 var last = toIndex;

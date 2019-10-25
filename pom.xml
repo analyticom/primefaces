@@ -206,9 +206,10 @@
 		</repository>
 
 		<repository>
-			<id>anayticom</id>
-			<url>http://repository.analyticom.de/maven/</url>
-		</repository>
+            <id>analyticom-mvn-extlibs-local</id>
+            <name>jfrog.analyticom.de-extlibs</name>
+            <url>https://jfrog.analyticom.de/artifactory/analyticom-mvn-extlibs-local</url>
+    </repository>
 
     </repositories>
 
@@ -519,22 +520,13 @@
 
 <!-- distribution to analyticom maven or jfrog -->
 
-  <!--<distributionManagement>
+  <distributionManagement>
     <repository>
       <id>jfrog.analyticom.de-releases-id</id>
       <name>jfrog.analyticom.de-releases</name>
       <url>https://jfrog.analyticom.de/artifactory/analyticom-mvn-extlibs-local</url>
     </repository>
 
-
-  </distributionManagement>-->
-
-  <distributionManagement>
-
-    <repository>
-      <id>analyticom</id>
-      <url>dav:http://repository.analyticom.de/maven/</url>
-    </repository>
 
   </distributionManagement>
 

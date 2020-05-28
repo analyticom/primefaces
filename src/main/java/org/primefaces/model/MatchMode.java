@@ -35,6 +35,7 @@ public enum MatchMode {
     GREATER_THAN_EQUALS("gte"),
     EQUALS("equals"),
     IN("in"),
+    SPLIT("split"),
     GLOBAL("global");
 
     private final String name;

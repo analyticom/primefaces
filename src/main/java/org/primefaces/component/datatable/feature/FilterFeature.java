@@ -23,17 +23,6 @@
  */
 package org.primefaces.component.datatable.feature;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.*;
-import javax.el.ELContext;
-import javax.el.MethodExpression;
-import javax.el.ValueExpression;
-import javax.faces.FacesException;
-import javax.faces.component.UIComponent;
-import javax.faces.component.UINamingContainer;
-import javax.faces.component.ValueHolder;
-import javax.faces.context.FacesContext;
 import org.primefaces.PrimeFaces;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
@@ -47,26 +36,55 @@ import org.primefaces.component.row.Row;
 import org.primefaces.event.data.PostFilterEvent;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.MatchMode;
-import org.primefaces.model.filter.*;
+import org.primefaces.model.filter.ContainsFilterConstraint;
+import org.primefaces.model.filter.EndsWithFilterConstraint;
+import org.primefaces.model.filter.EqualsFilterConstraint;
+import org.primefaces.model.filter.ExactFilterConstraint;
+import org.primefaces.model.filter.FilterConstraint;
+import org.primefaces.model.filter.GlobalFilterConstraint;
+import org.primefaces.model.filter.GreaterThanEqualsFilterConstraint;
+import org.primefaces.model.filter.GreaterThanFilterConstraint;
+import org.primefaces.model.filter.InFilterConstraint;
+import org.primefaces.model.filter.LessThanEqualsFilterConstraint;
+import org.primefaces.model.filter.LessThanFilterConstraint;
+import org.primefaces.model.filter.SplitFilterConstraint;
+import org.primefaces.model.filter.StartsWithFilterConstraint;
 import org.primefaces.util.ComponentUtils;
 import org.primefaces.util.LangUtils;
 import org.primefaces.util.MapBuilder;
 
+import javax.el.ELContext;
+import javax.el.MethodExpression;
+import javax.el.ValueExpression;
+import javax.faces.FacesException;
+import javax.faces.component.UIComponent;
+import javax.faces.component.UINamingContainer;
+import javax.faces.component.ValueHolder;
+import javax.faces.context.FacesContext;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 public class FilterFeature implements DataTableFeature {
 
     private static final Map<MatchMode, FilterConstraint> FILTER_CONSTRAINTS = MapBuilder.<MatchMode, FilterConstraint>builder()
-        .put(MatchMode.STARTS_WITH, new StartsWithFilterConstraint())
-        .put(MatchMode.ENDS_WITH, new EndsWithFilterConstraint())
-        .put(MatchMode.CONTAINS, new ContainsFilterConstraint())
-        .put(MatchMode.EXACT, new ExactFilterConstraint())
-        .put(MatchMode.LESS_THAN, new LessThanFilterConstraint())
-        .put(MatchMode.LESS_THAN_EQUALS, new LessThanEqualsFilterConstraint())
-        .put(MatchMode.GREATER_THAN, new GreaterThanFilterConstraint())
-        .put(MatchMode.GREATER_THAN_EQUALS, new GreaterThanEqualsFilterConstraint())
-        .put(MatchMode.EQUALS, new EqualsFilterConstraint())
-        .put(MatchMode.IN, new InFilterConstraint())
-        .put(MatchMode.GLOBAL, new GlobalFilterConstraint())
-        .build();
+            .put(MatchMode.STARTS_WITH, new StartsWithFilterConstraint())
+            .put(MatchMode.ENDS_WITH, new EndsWithFilterConstraint())
+            .put(MatchMode.CONTAINS, new ContainsFilterConstraint())
+            .put(MatchMode.EXACT, new ExactFilterConstraint())
+            .put(MatchMode.LESS_THAN, new LessThanFilterConstraint())
+            .put(MatchMode.LESS_THAN_EQUALS, new LessThanEqualsFilterConstraint())
+            .put(MatchMode.GREATER_THAN, new GreaterThanFilterConstraint())
+            .put(MatchMode.GREATER_THAN_EQUALS, new GreaterThanEqualsFilterConstraint())
+            .put(MatchMode.EQUALS, new EqualsFilterConstraint())
+            .put(MatchMode.IN, new InFilterConstraint())
+            .put(MatchMode.GLOBAL, new GlobalFilterConstraint())
+            .put(MatchMode.SPLIT, new SplitFilterConstraint())
+            .build();
 
     private boolean isFilterRequest(FacesContext context, DataTable table) {
         return context.getExternalContext().getRequestParameterMap().containsKey(table.getClientId(context) + "_filtering");

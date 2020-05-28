@@ -23,20 +23,20 @@
  */
 package org.primefaces.component.panelmenu;
 
-import java.io.IOException;
-import java.util.List;
-
-import javax.faces.context.FacesContext;
-import javax.faces.context.ResponseWriter;
-
 import org.primefaces.component.menu.AbstractMenu;
 import org.primefaces.component.menu.BaseMenuRenderer;
 import org.primefaces.component.menu.Menu;
 import org.primefaces.model.menu.MenuElement;
 import org.primefaces.model.menu.MenuItem;
+import org.primefaces.model.menu.Separator;
 import org.primefaces.model.menu.Submenu;
 import org.primefaces.util.HTML;
 import org.primefaces.util.WidgetBuilder;
+
+import javax.faces.context.FacesContext;
+import javax.faces.context.ResponseWriter;
+import java.io.IOException;
+import java.util.List;
 
 public class PanelMenuRenderer extends BaseMenuRenderer {
 
@@ -151,6 +151,9 @@ public class PanelMenuRenderer extends BaseMenuRenderer {
                     else if (element instanceof Submenu) {
                         encodeDescendantSubmenu(context, menu, (Submenu) element);
                     }
+                    else if (element instanceof Separator) {
+                        encodeSeparator(context, (Separator) element);
+                    }
                 }
             }
 
@@ -225,6 +228,9 @@ public class PanelMenuRenderer extends BaseMenuRenderer {
                     }
                     else if (element instanceof Submenu) {
                         encodeDescendantSubmenu(context, menu, (Submenu) element);
+                    }
+                    else if (element instanceof Separator) {
+                        encodeSeparator(context, (Separator) element);
                     }
                 }
             }

@@ -179,8 +179,9 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
                 if(mouseEnterInfo.event.extendedProps.description) {
                     $this.tipTimeout = setTimeout(function() {
                         $this.tip.css({
+                            'position': 'fixed',
                             'left': mouseEnterInfo.jsEvent.pageX,
-                            'top': mouseEnterInfo.jsEvent.pageY + 15,
+                            'top': mouseEnterInfo.jsEvent.pageY - window.pageYOffset + 15,
                             'z-index': ++PrimeFaces.zindex
                         });
                         $this.tip[0].innerHTML = mouseEnterInfo.event.extendedProps.description;

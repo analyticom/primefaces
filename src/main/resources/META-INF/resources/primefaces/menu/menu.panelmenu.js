@@ -47,8 +47,13 @@ PrimeFaces.widget.PanelMenu = PrimeFaces.widget.BaseWidget.extend({
 
         this.bindEvents();
 
+        // COMET-2114 simple stateKey which is the same no matter what is requested resource
         if(this.cfg.stateful) {
-            this.stateKey = PrimeFaces.createStorageKey(this.id, 'PanelMenu');
+            if ("SIMPLE" === this.cfg.storageKeyType) {
+                this.stateKey = PrimeFaces.createStorageKeySimple(this.id, 'PanelMenu');
+            } else {
+                this.stateKey = PrimeFaces.createStorageKey(this.id, 'PanelMenu');
+            }
         }
 
         this.restoreState();
@@ -427,7 +432,11 @@ PrimeFaces.widget.PanelMenu = PrimeFaces.widget.BaseWidget.extend({
         if(this.cfg.stateful) {
             var expandedNodeIds = this.expandedNodes.join(',');
 
-            localStorage.setItem(this.stateKey, expandedNodeIds);
+            if ("COOKIE" === this.cfg.stateHolder) {
+                Cookies.set(this.stateKey, expandedNodeIds, null);
+            } else {
+                localStorage.setItem(this.stateKey, expandedNodeIds);
+            }
         }
     },
 
@@ -440,7 +449,11 @@ PrimeFaces.widget.PanelMenu = PrimeFaces.widget.BaseWidget.extend({
         var expandedNodeIds = null;
 
         if(this.cfg.stateful) {
-            expandedNodeIds = localStorage.getItem(this.stateKey);
+            if ("COOKIE" === this.cfg.stateHolder) {
+                expandedNodeIds = Cookies.get(this.stateKey);
+            } else {
+                expandedNodeIds = localStorage.getItem(this.stateKey);
+            }
         }
 
         if(expandedNodeIds) {
@@ -502,7 +515,11 @@ PrimeFaces.widget.PanelMenu = PrimeFaces.widget.BaseWidget.extend({
      */
     clearState: function() {
         if(this.cfg.stateful) {
-            localStorage.removeItem(this.stateKey);
+            if ("COOKIE" === this.cfg.stateHolder) {
+                Cookies.remove(this.stateKey, null);
+            } else {
+                localStorage.removeItem(this.stateKey);
+            }
         }
     },
 

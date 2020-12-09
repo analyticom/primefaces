@@ -106,6 +106,9 @@
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="primefaces.widget.panelmenucfg.html#multiple" class="tsd-kind-icon">multiple</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="primefaces.widget.panelmenucfg.html#stateful" class="tsd-kind-icon">stateful</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="primefaces.widget.panelmenucfg.html#widgetvar" class="tsd-kind-icon">widget<wbr>Var</a></li>
+								<!-- COMET 2114 -->
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="primefaces.widget.panelmenucfg.html#storageKeyType" class="tsd-kind-icon">storageKeyType</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="primefaces.widget.panelmenucfg.html#stateHolder" class="tsd-kind-icon">stateHolder</a></li>
 							</ul>
 						</section>
 					</div>
@@ -163,7 +166,8 @@
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Whether the UI state (expanded menu items) should be persisted in a cookie.</p>
+							<p>Whether the UI state (expanded menu items) should be persisted in a storage
+								(a default HTML5 local storage or a cookie if default storage setting overridden with stateHolder attribute).</p>
 						</div>
 					</div>
 				</section>
@@ -178,6 +182,32 @@
 						<div class="lead">
 							<p>The name of the widget variables of this widget. The widget variable can be used to
 							access a widget instance by calling <code>PF(&quot;myWidgetVar&quot;)</code>.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="storageKeyType" class="tsd-anchor"></a>
+					<h3>storageKeyType</h3>
+					<div class="tsd-signature tsd-kind-icon">storageKeyType<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>COMET-2114 Storage key type makes possible to override default stateKey creation.
+								Use value "SIMPLE" if state key should be comprised of only id and key (while contextPath and viewId will not be used).</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="stateHolder" class="tsd-anchor"></a>
+					<h3>stateHolder</h3>
+					<div class="tsd-signature tsd-kind-icon">stateHolder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>COMET-2114 State holder makes possible to override default behavior and use another state holder.
+								Use value "COOKIE" to use cookies instead of HTML5 local storage.</p>
 						</div>
 					</div>
 				</section>

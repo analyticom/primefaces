@@ -47,7 +47,10 @@ public class PanelMenuRenderer extends BaseMenuRenderer {
         WidgetBuilder wb = getWidgetBuilder(context);
         wb.init("PanelMenu", menu.resolveWidgetVar(context), clientId)
                 .attr("stateful", menu.isStateful())
-                .attr("multiple", menu.isMultiple());
+                .attr("multiple", menu.isMultiple())
+                // COMET-2114
+                .attr("stateHolder", menu.getStateHolder())
+                .attr("storageKeyType", menu.getStorageKeyType());
         wb.finish();
     }
 

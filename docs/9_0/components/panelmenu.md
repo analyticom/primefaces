@@ -26,7 +26,9 @@ model | null | MenuModel | MenuModel instance to build menu dynamically.
 style | null | String | Inline style of the component.
 styleClass | null | String | Style class of the component.
 widgetVar | null | String | Name of the client side widget.
-stateful | true | Boolean | Menu state is saved in a cookie
+stateful | true | Boolean | Menu state is saved in a HTML5 local storage (default) or in a cookie if default overridden with stateHolder attribute
+stateHolder | null | String | COMET-2114 If not specified, then HTML5 local storage is used. If value is COOKIE, then cookies are used instead.
+storageKeyType | null | String | COMET-2114 If not specified, then storage key is comprised of contextPath+viewId+id+key. If value is SIMPLE, then the storage key is comprised of id+key.
 
 ## Getting started with PanelMenu
 PanelMenu consists of submenus and menuitems. First level of submenus are rendered as accordion

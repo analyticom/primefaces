@@ -25,13 +25,14 @@ package org.primefaces.model.filter;
 
 import org.primefaces.util.Constants;
 
+import javax.faces.context.FacesContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class SplitFilterConstraint implements FilterConstraint {
 
-    public boolean applies(Object value, Object filter, Locale locale) {
+    private boolean applies(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase(locale);
         String valueText = (value == null) ? null : value.toString().trim().toLowerCase(locale);
 
@@ -41,10 +42,10 @@ public class SplitFilterConstraint implements FilterConstraint {
         if (valueText == null) {
             return false;
         }
-        if (valueText.indexOf(",") > -1) {
+        if (valueText.contains(",")) {
             valueText = valueText.replace(",", "");
         }
-        if (filterText.indexOf(",") > -1) {
+        if (filterText.contains(",")) {
             filterText = filterText.replace(",", "");
         }
         String[] valueSplits = valueText.split(" ");
@@ -63,5 +64,10 @@ public class SplitFilterConstraint implements FilterConstraint {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean isMatching(FacesContext ctxt, Object value, Object filter, Locale locale) {
+        return applies(value, filter, locale);
     }
 }

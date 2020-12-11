@@ -231,10 +231,21 @@
          */
         createStorageKey : function(id, key) {
             var sk = PrimeFaces.settings.contextPath.replace(/\//g, '-')
-                    + PrimeFaces.settings.viewId.replace(/\//g, '-')
-                    + id + '-'
-                    + key;
+                + PrimeFaces.settings.viewId.replace(/\//g, '-')
+                + id + '-'
+                + key;
             return sk.toLowerCase();
+        },
+
+        /**
+         * COMET-2114
+         * Generates a unique key for using in storage by combining the id and key.
+         * @param {string} id ID of the component
+         * @param {string} key a unique key name such as the component name
+         * @return {string} the generated key comprising of id + key
+         */
+        createStorageKeySimple : function(id, key) {
+            return id + '-' + key;
         },
 
         /**

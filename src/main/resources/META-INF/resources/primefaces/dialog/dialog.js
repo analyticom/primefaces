@@ -93,7 +93,7 @@ PrimeFaces.widget.Dialog = PrimeFaces.widget.DynamicOverlayWidget.extend({
         this.parent = this.jq.parent();
 
         this.initSize();
-        
+
         //events
         this.bindEvents();
 
@@ -224,6 +224,27 @@ PrimeFaces.widget.Dialog = PrimeFaces.widget.DynamicOverlayWidget.extend({
                 this.loaded = false;
             }
         }
+
+        /*
+         * @commentedBy mbaricevic 2016-12-01
+         * always put modal dialog in center of the viewscreen
+         */
+
+        try {
+            if (this.cfg.modal  && (typeof DIALOG_POSITION !== "undefined" ) && DIALOG_POSITION === "central" && (this.cfg.position==null || this.cfg.position=='' || this.cfg.position=='center'))
+            {
+                this.jq.css({
+                    'top': (Math.max(0,(($(window).height() - this.jq.outerHeight()) / 2)))+'px !important',
+                    'left': (Math.max(0,(($(window).width() - this.jq.outerWidth()) / 2)))+'px  !important',
+                    'position':'fixed'
+                });
+            }
+        }
+        catch(err)
+        {
+            console.log('ANALYTICOM - Always put modal dialog in center of the viewscreen: '+err.message);
+        }
+
     },
 
     /**

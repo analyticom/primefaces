@@ -23,6 +23,20 @@
  */
 package org.primefaces.component.schedule;
 
+import org.joda.time.DateTimeZone;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.primefaces.model.LazyScheduleModel;
+import org.primefaces.model.ScheduleEvent;
+import org.primefaces.model.ScheduleModel;
+import org.primefaces.renderkit.CoreRenderer;
+import org.primefaces.util.CalendarUtils;
+import org.primefaces.util.LocaleUtils;
+import org.primefaces.util.WidgetBuilder;
+
+import javax.faces.component.UIComponent;
+import javax.faces.context.FacesContext;
+import javax.faces.context.ResponseWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -97,9 +111,15 @@ public class ScheduleRenderer extends CoreRenderer {
     }
 
     protected void encodeEventsAsJSON(FacesContext context, Schedule schedule, ScheduleModel model) throws IOException {
-        ZoneId zoneId = CalendarUtils.calculateZoneId(schedule.getTimeZone());
+//        ZoneId zoneId = CalendarUtils.calculateZoneId(schedule.getTimeZone());
 
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(zoneId);
+//        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(zoneId);
+
+//        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        ZoneId zoneId = ZoneId.of(DateTimeZone.UTC.getID());
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(zoneId);
+
+
 
         JSONArray jsonEvents = new JSONArray();
 

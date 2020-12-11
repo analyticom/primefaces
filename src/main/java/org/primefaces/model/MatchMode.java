@@ -39,6 +39,7 @@ public enum MatchMode {
     EQUALS("equals"),
     IN("in"),
     RANGE("range"),
+    SPLIT("split"),
     GLOBAL("global");
 
     private final String operator;

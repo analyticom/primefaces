@@ -6703,6 +6703,17 @@ declare namespace PrimeFaces {
      * @return the generated key comprising of context + view + id + key
      */
     export function createStorageKey(id: string, key: string): string;
+
+    /**
+     * COMET-2114
+     * Generates a simple unique key for using in storage by combining id and key.
+     *
+     * @param id ID of the component
+     * @param key a unique key name such as the component name
+     * @return the generated key comprising of id + key
+     */
+    export function createStorageKeySimple(id: string, key: string): string;
+
     /**
      * Creates a new widget of the given type and with the given configuration. Registers that widget in the widgets
      * registry {@link PrimeFaces.widgets}. If this method is called in response to an AJAX request and the method
@@ -24342,6 +24353,18 @@ declare namespace PrimeFaces.widget {
          * Whether the UI state (expanded menu items) should be persisted in an HTML5 Local Store.
          */
         stateful: boolean;
+
+        /**
+         * COMET-2114
+         * Use SIMPLE if only id and key should be used for storage key (while contextPath and viewId should be ignored)
+         */
+        storageKeyType: string;
+
+        /**
+         * COMET-2114
+         * Use COOKIE if Cookie is preferred over local HTML5 storage
+         */
+        stateHolder: string;
     }
 }
 declare namespace PrimeFaces.widget {

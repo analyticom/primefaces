@@ -1,23 +1,23 @@
 /**
  * __PrimeFaces Schedule Widget__
- * 
+ *
  * Schedule provides an Outlook Calendar, iCal like JSF component to manage events.
- * 
+ *
  * @typedef PrimeFaces.widget.Schedule.ScheduleExtender Name of JavaScript function to extend the options of the
  * underlying FullCalendar plugin. Access the this schedule widget via the this context, and change the FullCalendar
  * configuration stored in `this.cfg`. See also {@link ScheduleCfg.extender}.
- * @this {PrimeFaces.widget.Schedule} PrimeFaces.widget.Schedule.ScheduleExtender 
- * 
+ * @this {PrimeFaces.widget.Schedule} PrimeFaces.widget.Schedule.ScheduleExtender
+ *
  * @prop {import("@fullcalendar/core").Calendar} calendar The current full calendar instance.
  * @prop {JQuery} tip The DOM element for the tooltip.
  * @prop {number} tipTimeout The set-time   out timer ID for displaying a delayed tooltip.
  * @prop {JQuery} viewNameState The DOM element for the hidden input storing the current view state.
- * 
+ *
  * @interface {PrimeFaces.widget.ScheduleCfg} cfg The configuration for the {@link  Schedule| Schedule widget}.
  * You can access this configuration via {@link PrimeFaces.widget.BaseWidget.cfg|BaseWidget.cfg}. Please note that this
  * configuration is usually meant to be read-only and should not be modified.
  * @extends {PrimeFaces.widget.DeferredWidgetCfg} cfg
- * 
+ *
  * @prop {PrimeFaces.widget.Schedule.ScheduleExtender} cfg.extender Name of JavaScript function to extend the options of
  * the underlying FullCalendar plugin. Access the this schedule widget via the this context, and change the FullCalendar
  * configuration stored in `this.cfg`.
@@ -43,12 +43,12 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
         this._super(cfg);
         this.cfg.formId = this.jq.closest('form').attr('id');
         this.cfg.options.themeSystem = 'standard';
-        this.cfg.options.slotLabelFormat = this.cfg.options.slotLabelFormat || undefined; 
+        this.cfg.options.slotLabelFormat = this.cfg.options.slotLabelFormat || undefined;
         this.cfg.options.viewClassNames = this.onViewChange.bind(this);
         this.viewNameState = $(this.jqId + '_view');
         this.cfg.urlTarget = this.cfg.urlTarget || "_blank";
         this.cfg.options.plugins = [
-            FullCalendar.interactionPlugin, 
+            FullCalendar.interactionPlugin,
             FullCalendar.dayGridPlugin,
             FullCalendar.timeGridPlugin,
             FullCalendar.listPlugin,
@@ -111,7 +111,7 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
             if (lang.allDayText) { options.allDayText = lang.allDayText; }
             if (lang.moreLinkText) { options.moreLinkText = lang.moreLinkText; }
             if (lang.noEventsText) { options.noEventsText = lang.noEventsText; }
-            
+
             var buttonText = options.buttonText || {};
             if (lang.prevText) { buttonText.prev = lang.prevText; }
             if (lang.nextText) { buttonText.next = lang.nextText; }
@@ -124,7 +124,7 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
             options.buttonText = buttonText;
         }
     },
-    
+
     /**
      * Creates and sets the event listeners for the full calendar.
      * @private
@@ -160,12 +160,12 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
                 }
             }
         };
-        
+
         this.cfg.options.eventClick = function(eventClickInfo) {
             if (eventClickInfo.event.url) {
                 var targetWindow = window.open('', $this.cfg.urlTarget);
                 if ($this.cfg.noOpener) {
-                    targetWindow.opener = null;    
+                    targetWindow.opener = null;
                 }
                 targetWindow.location = eventClickInfo.event.url;
                 eventClickInfo.jsEvent.preventDefault(); // don't let the browser navigate
@@ -225,6 +225,7 @@ PrimeFaces.widget.Schedule = PrimeFaces.widget.DeferredWidget.extend({
                 if(mouseEnterInfo.event.extendedProps.description) {
                     $this.tipTimeout = setTimeout(function() {
                         $this.tip.css({
+                          'position': 'fixed',
                             'left': mouseEnterInfo.jsEvent.pageX + 'px',
                             'top': (mouseEnterInfo.jsEvent.pageY + 15) + 'px',
                             'z-index': PrimeFaces.nextZindex()

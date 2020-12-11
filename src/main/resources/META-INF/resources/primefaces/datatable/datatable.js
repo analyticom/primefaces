@@ -4311,6 +4311,11 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                 helperRow = ui.clone(),
                 helperCells = helperRow.children();
 
+                // COMET-1596 Prevents dragging expanded row as it is not part of same data set
+                if (helperRow.hasClass('ui-expanded-row-content')) {
+                    return;
+                }
+
                 for(var i = 0; i < helperCells.length; i++) {
                     var helperCell = helperCells.eq(i);
                     helperCell.width(cells.eq(i).width());
@@ -4323,6 +4328,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                 return helper;
             },
             update: function(event, ui) {
+                // COMET-1596 toIndex contains expanded rows and they should be excluded as they are not part of same data set
                 var fromIndex = ui.item.data('ri'),
                 fromNode = ui.item;
                 itemIndex = ui.item.index(),

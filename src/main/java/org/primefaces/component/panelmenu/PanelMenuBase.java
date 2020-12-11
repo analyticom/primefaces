@@ -39,7 +39,10 @@ public abstract class PanelMenuBase extends AbstractMenu implements Widget {
         style,
         styleClass,
         multiple,
-        stateful
+        stateful,
+        // COMET-2114
+        stateHolder,
+        storageKeyType
     }
 
     public PanelMenuBase() {
@@ -99,4 +102,21 @@ public abstract class PanelMenuBase extends AbstractMenu implements Widget {
     public void setStateful(boolean stateful) {
         getStateHelper().put(PropertyKeys.stateful, stateful);
     }
+
+    public void setStateHolder(String stateHolder) {
+        getStateHelper().put(PropertyKeys.stateHolder, stateHolder);
+    }
+
+    public String getStateHolder() {
+        return (String) getStateHelper().eval(PropertyKeys.stateHolder, null);
+    }
+
+    public String getStorageKeyType() {
+        return (String) getStateHelper().eval(PropertyKeys.storageKeyType, null);
+    }
+
+    public void setStorageKeyType(String storageKeyType) {
+        getStateHelper().put(PropertyKeys.storageKeyType, storageKeyType);
+    }
+
 }

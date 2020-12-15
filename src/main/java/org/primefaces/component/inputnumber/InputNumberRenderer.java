@@ -194,6 +194,7 @@ public class InputNumberRenderer extends InputRenderer {
         writer.writeAttribute("id", inputId, null);
         writer.writeAttribute("name", inputId, null);
         writer.writeAttribute("type", inputNumber.getType(), null);
+        writer.writeAttribute("autocomplete", "off", null);
         writer.writeAttribute("value", valueToRender, null);
 
         if (!isValueBlank(style)) {
@@ -233,6 +234,7 @@ public class InputNumberRenderer extends InputRenderer {
             .attr("digitGroupSeparator", digitGroupSeparator, ",")
             .attr("currencySymbol", inputNumber.getSymbol())
             .attr("currencySymbolPlacement", inputNumber.getSymbolPosition(), "p")
+            .attr("negativePositiveSignPlacement", inputNumber.getSignPosition(), null)
             .attr("minimumValue", getMinimum(inputNumber, value))
             .attr("maximumValue", getMaximum(inputNumber, value))
             .attr("decimalPlaces", getDecimalPlaces(inputNumber, value))

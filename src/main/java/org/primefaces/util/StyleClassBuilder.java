@@ -21,41 +21,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.primefaces.component.datatable.feature;
-
-import java.io.IOException;
-import javax.faces.FacesException;
+package org.primefaces.util;
 
 import javax.faces.context.FacesContext;
 
-import org.primefaces.component.datatable.DataTable;
-import org.primefaces.component.datatable.DataTableRenderer;
-import org.primefaces.component.datatable.DataTableState;
+public class StyleClassBuilder {
 
-public class ResizableColumnsFeature implements DataTableFeature {
+    private static final String KEY = StyleClassBuilder.class.getName() + "#styleClass";
 
-    @Override
-    public void decode(FacesContext context, DataTable table) {
-        table.decodeColumnResizeState(table, context);
+    private final StringBuilder sb;
 
-        if (table.isMultiViewState()) {
-            DataTableState state = table.getMultiViewState(true);
-            state.setResizableColumns(table.getResizableColumnsAsMap());
+    public StyleClassBuilder(FacesContext context) {
+        sb = SharedStringBuilder.get(context, KEY);
+    }
+
+    public StyleClassBuilder add(boolean condition, String styleClass) {
+        if (condition) {
+            if (sb.length() != 0) {
+                sb.append(Constants.SPACE);
+            }
+            sb.append(styleClass);
         }
+        return this;
     }
 
-    @Override
-    public void encode(FacesContext context, DataTableRenderer renderer, DataTable table) throws IOException {
-        throw new FacesException("ResizableColumnsFeature should not encode.");
+    public StyleClassBuilder add(boolean condition, String styleClass, String notStyleClass) {
+        add(condition, styleClass).add(!condition, notStyleClass);
+        return this;
     }
 
-    @Override
-    public boolean shouldDecode(FacesContext context, DataTable table) {
-        return context.getExternalContext().getRequestParameterMap().containsKey(table.getClientId(context) + "_resizableColumnState");
+    public StyleClassBuilder add(String styleClass) {
+        add(LangUtils.isNotBlank(styleClass), styleClass);
+        return this;
     }
 
-    @Override
-    public boolean shouldEncode(FacesContext context, DataTable table) {
-        return false;
+    public StyleClassBuilder add(String defaultStyleClass, String userStyleClass) {
+        add(defaultStyleClass).add(userStyleClass);
+        return this;
+    }
+
+    public String build() {
+        String styleClass = sb.toString();
+
+        sb.setLength(0);
+
+        return styleClass;
     }
 }

@@ -565,22 +565,6 @@ public class TreeTable extends TreeTableBase {
         }
     }
 
-    public void updateColumnsVisibility(FacesContext context) {
-        Map<String, String> params = context.getExternalContext().getRequestParameterMap();
-        String columnTogglerParam = params.get(getClientId(context) + "_columnTogglerState");
-        if (columnTogglerParam != null) {
-            String[] togglableColumns = columnTogglerParam.split(",");
-            for (String togglableColumn : togglableColumns) {
-                int sepIndex = togglableColumn.lastIndexOf('_');
-                UIColumn column = findColumn(togglableColumn.substring(0, sepIndex));
-
-                if (column != null) {
-                    ((Column) column).setVisible(Boolean.valueOf(togglableColumn.substring(sepIndex + 1)));
-                }
-            }
-        }
-    }
-
     @Override
     protected boolean requiresColumns() {
         return true;
@@ -605,6 +589,9 @@ public class TreeTable extends TreeTableBase {
             }
 
             // TODO selection
+
+            setVisibleColumnsAsMap(ts.getVisibleColumns());
+            setResizableColumnsAsMap(ts.getResizableColumns());
         }
     }
 
@@ -681,5 +668,25 @@ public class TreeTable extends TreeTableBase {
     public boolean isMultiSort() {
         String sortMode = getSortMode();
         return sortMode != null && sortMode.equals("multiple");
+    }
+
+    @Override
+    public Map<String, Boolean> getVisibleColumnsAsMap() {
+        return ComponentUtils.eval(getStateHelper(), InternalPropertyKeys.visibleColumnsAsMap.name(), Collections::emptyMap);
+    }
+
+    @Override
+    public void setVisibleColumnsAsMap(Map<String, Boolean> visibleColumnsAsMap) {
+        getStateHelper().put(InternalPropertyKeys.visibleColumnsAsMap.name(), visibleColumnsAsMap);
+    }
+
+    @Override
+    public Map<String, String> getResizableColumnsAsMap() {
+        return ComponentUtils.eval(getStateHelper(), InternalPropertyKeys.resizableColumnsAsMap.name(), Collections::emptyMap);
+    }
+
+    @Override
+    public void setResizableColumnsAsMap(Map<String, String> resizableColumnsAsMap) {
+        getStateHelper().put(InternalPropertyKeys.resizableColumnsAsMap.name(), resizableColumnsAsMap);
     }
 }

@@ -387,7 +387,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         // #5582: destroy any current draggable items
         if (this.cfg.draggableColumns || this.cfg.draggableRows) {
             var dragdrop = $.ui.ddmanager.current;
-            if (dragdrop) {
+            if (dragdrop && dragdrop.helper) {
                 var item = dragdrop.currentItem || dragdrop.element;
                 if(item.closest('.ui-datatable')[0] === this.jq[0]) {
                     document.body.style.cursor = 'default';
@@ -561,6 +561,8 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
 
             $this.updateReflowDD(columnHeader, sortOrder);
         });
+
+        $this.updateSortPriorityIndicators();
 
         if(this.reflowDD && this.cfg.reflow) {
             PrimeFaces.skinSelect(this.reflowDD);
@@ -762,6 +764,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         this.cfg.rowSelectMode = this.cfg.rowSelectMode||'new';
         this.rowSelector = '> tr.ui-widget-content.ui-datatable-selectable';
         this.cfg.disabledTextSelection = this.cfg.disabledTextSelection === false ? false : true;
+        this.cfg.selectionPageOnly = this.cfg.selectionPageOnly === false ? !this.cfg.paginator : true;
         this.rowSelectorForRowClick = this.cfg.rowSelector||'td:not(.ui-column-unselectable),span:not(.ui-c)';
 
         var preselection = $(this.selectionHolder).val();
@@ -1494,7 +1497,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         this.theadClone = this.cloneTableHeader(this.thead, this.bodyTable);
 
         //reflect events from clone to original
-        if(this.sortableColumns.length) {
+        if(this.cfg.sorting) {
             this.sortableColumns.removeAttr('tabindex').off('blur.dataTable focus.dataTable keydown.dataTable');
 
             var clonedColumns = this.theadClone.find('> tr > th'),
@@ -2059,6 +2062,8 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                             $(PrimeFaces.escapeClientId(columnHeader.attr('id') + '_clone')).attr('aria-sort', 'other')
                                 .attr('aria-label', $this.getSortMessage(ariaLabel, $this.ascMessage));
                         }
+
+                        $this.updateSortPriorityIndicators();
                     }
                 }
 
@@ -2092,6 +2097,32 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         }
         else {
             PrimeFaces.ajax.Request.handle(options);
+        }
+    },
+    
+    /**
+     * In multi-sort mode this will add number indicators to let the user know the current 
+     * sort order. If only one column is sorted then no indicator is displayed and will
+     * only be displayed once more than one column is sorted.
+     * @private
+     */
+    updateSortPriorityIndicators: function() {
+        var $this = this;
+
+        // remove all indicator numbers first
+        $this.sortableColumns.find('.ui-sortable-column-badge').text('').addClass('ui-helper-hidden');
+
+        // add 1,2,3 etc to columns if more than 1 column is sorted
+        var sortMeta =  $this.sortMeta;
+        if (sortMeta && sortMeta.length > 1) {
+            $this.sortableColumns.each(function() {
+                var id = $(this).attr("id");
+                for (var i = 0; i < sortMeta.length; i++) {
+                    if (sortMeta[i].col == id) {
+                        $(this).find('.ui-sortable-column-badge').text(i + 1).removeClass('ui-helper-hidden');
+                    }
+                }
+            });
         }
     },
 
@@ -2651,6 +2682,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      * all rows. When some rows are selected, this will unselect all rows.
      */
     toggleCheckAll: function() {
+        var shouldCheckAll = true;
         if(this.cfg.nativeElements) {
             var checkboxes = this.tbody.find('> tr.ui-datatable-selectable > td.ui-selection-column > :checkbox:visible'),
             checked = this.checkAllToggler.prop('checked'),
@@ -2666,6 +2698,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                     var checkbox = $(this);
                     checkbox.prop('checked', false);
                     $this.unselectRowWithCheckbox(checkbox, true);
+                    shouldCheckAll = false;
                 }
             });
         }
@@ -2677,6 +2710,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
             if(checked) {
                 this.checkAllToggler.removeClass('ui-state-active').children('span.ui-chkbox-icon').addClass('ui-icon-blank').removeClass('ui-icon-check');
                 this.checkAllToggler.attr('aria-checked', false);
+                shouldCheckAll = false;
 
                 checkboxes.each(function() {
                     $this.unselectRowWithCheckbox($(this), true);
@@ -2690,6 +2724,11 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                     $this.selectRowWithCheckbox($(this), true);
                 });
             }
+        }
+
+        // GitHub #6730 user wants all rows not just displayed rows
+        if(!this.cfg.selectionPageOnly && shouldCheckAll) {
+            this.selectAllRows();
         }
 
         //save state
@@ -3037,7 +3076,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                                 $this.incellClick = true;
                             }
 
-                            if(!$this.incellClick && $this.currentCell && !$this.contextMenuClick && !$.datepicker._datepickerShowing) {
+                            if(!$this.incellClick && $this.currentCell && !$this.contextMenuClick && !$.datepicker._datepickerShowing && $('.p-datepicker-panel:visible').length === 0) {
                                 if($this.cfg.saveOnCellBlur)
                                     $this.saveCell($this.currentCell);
                                 else
@@ -3760,6 +3799,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      */
     clearFilters: function() {
         this.thead.find('> tr > th.ui-filter-column > .ui-column-filter').val('');
+        this.thead.find('> tr > th.ui-filter-column > .ui-column-customfilter :input').val('');
         $(this.jqId + '\\:globalFilter').val('');
 
         this.filter();
@@ -4064,12 +4104,25 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
     /**
      * Remove given row from the list of selected rows.
      * @private
-     * @param {string} rowIndex Key of the row to remove.
+     * @param {string} rowKey Key of the row to remove.
      */
-    removeSelection: function(rowIndex) {
-        this.selection = $.grep(this.selection, function(value) {
-            return value != rowIndex;
-        });
+    removeSelection: function(rowKey) {
+        if(this.selection.includes('@all')) {
+            // GitHub #3535 if @all was previously selected just select values on page
+            this.clearSelection();
+            var rows = this.tbody.children('tr');
+            for(var i = 0; i < rows.length; i++) {
+                var rowMeta = this.getRowMeta(rows.eq(i));
+                if(rowMeta.key !== rowKey) {
+                    this.addSelection(rowMeta.key);
+                }
+            }
+        }
+        else {
+            this.selection = $.grep(this.selection, function(value) {
+                return value !== rowKey;
+            });
+        }
     },
 
     /**
@@ -4428,6 +4481,12 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         if(this.isEmpty()) {
             this.uncheckHeaderCheckbox();
             this.disableHeaderCheckbox();
+        }
+        else if(!this.cfg.selectionPageOnly) {
+            if(this.selection.includes('@all')) {
+                this.enableHeaderCheckbox();
+                this.checkHeaderCheckbox();
+            }
         }
         else {
             var checkboxes, selectedCheckboxes, enabledCheckboxes, disabledCheckboxes;

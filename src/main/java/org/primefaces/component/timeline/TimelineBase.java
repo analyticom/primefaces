@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2009-2020 PrimeTek
+ * Copyright (c) 2009-2021 PrimeTek
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,7 @@ public abstract class TimelineBase extends UIComponentBase implements Widget, RT
         end,
         min,
         max,
+        zoomKey,
         zoomMin,
         zoomMax,
         preloadFactor,
@@ -375,6 +376,14 @@ public abstract class TimelineBase extends UIComponentBase implements Widget, RT
 
     public void setMax(LocalDateTime max) {
         getStateHelper().put(PropertyKeys.max, max);
+    }
+
+    public String getZoomKey() {
+        return (String) getStateHelper().eval(PropertyKeys.zoomKey, null);
+    }
+
+    public void setZoomKey(String zoomKey) {
+        getStateHelper().put(PropertyKeys.zoomKey, zoomKey);
     }
 
     public Long getZoomMin() {

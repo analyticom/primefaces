@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2009-2020 PrimeTek
+ * Copyright (c) 2009-2021 PrimeTek
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,23 @@
  */
 package org.primefaces.component.datatable;
 
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import javax.el.ValueExpression;
+import javax.faces.FacesException;
+import javax.faces.application.ResourceDependency;
+import javax.faces.component.UIComponent;
+import javax.faces.component.UINamingContainer;
+import javax.faces.context.FacesContext;
+import javax.faces.event.AjaxBehaviorEvent;
+import javax.faces.event.BehaviorEvent;
+import javax.faces.event.FacesEvent;
+import javax.faces.event.PhaseId;
+import javax.faces.model.DataModel;
+
 import org.primefaces.PrimeFaces;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
@@ -41,19 +58,6 @@ import org.primefaces.event.data.PageEvent;
 import org.primefaces.event.data.SortEvent;
 import org.primefaces.model.*;
 import org.primefaces.util.*;
-
-import javax.el.ValueExpression;
-import javax.faces.FacesException;
-import javax.faces.application.ResourceDependency;
-import javax.faces.component.UIComponent;
-import javax.faces.component.UINamingContainer;
-import javax.faces.context.FacesContext;
-import javax.faces.event.*;
-import javax.faces.model.DataModel;
-import java.lang.reflect.Array;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @ResourceDependency(library = "primefaces", name = "components.css")
 @ResourceDependency(library = "primefaces", name = "jquery/jquery.js")
@@ -84,6 +88,7 @@ public class DataTable extends DataTableBase {
     public static final String SORTABLE_COLUMN_ICON_CLASS = "ui-sortable-column-icon ui-icon ui-icon-carat-2-n-s";
     public static final String SORTABLE_COLUMN_ASCENDING_ICON_CLASS = "ui-sortable-column-icon ui-icon ui-icon ui-icon-carat-2-n-s ui-icon-triangle-1-n";
     public static final String SORTABLE_COLUMN_DESCENDING_ICON_CLASS = "ui-sortable-column-icon ui-icon ui-icon ui-icon-carat-2-n-s ui-icon-triangle-1-s";
+    public static final String SORTABLE_PRIORITY_CLASS = "ui-sortable-column-badge";
     public static final String STATIC_COLUMN_CLASS = "ui-static-column";
     public static final String UNSELECTABLE_COLUMN_CLASS = "ui-column-unselectable";
     public static final String HIDDEN_COLUMN_CLASS = "ui-helper-hidden";
@@ -183,7 +188,6 @@ public class DataTable extends DataTableBase {
     private List<Object> selectedRowKeys = new ArrayList<>();
     private boolean isRowKeyRestored = false;
     private List<UIColumn> columns;
-    private Columns dynamicColumns;
     private Set<Integer> expandedRowsSet;
     private Map<String, AjaxBehaviorEvent> deferredEvents = new HashMap<>(1);
 
@@ -226,8 +230,7 @@ public class DataTable extends DataTableBase {
     public boolean isRowEditCancelRequest(FacesContext context) {
         Map<String, String> params = context.getExternalContext().getRequestParameterMap();
         String value = params.get(getClientId(context) + "_rowEditAction");
-
-        return value != null && value.equals("cancel");
+        return "cancel".equals(value);
     }
 
     public boolean isRowSelectionEnabled() {
@@ -262,10 +265,10 @@ public class DataTable extends DataTableBase {
         String columnSelectionMode = getColumnSelectionMode();
 
         if (selectionMode != null) {
-            return selectionMode.equalsIgnoreCase("single");
+            return "single".equalsIgnoreCase(selectionMode);
         }
         else if (columnSelectionMode != null) {
-            return columnSelectionMode.equalsIgnoreCase("single");
+            return "single".equalsIgnoreCase(columnSelectionMode);
         }
         else {
             return false;
@@ -315,50 +318,54 @@ public class DataTable extends DataTableBase {
 
             AjaxBehaviorEvent behaviorEvent = (AjaxBehaviorEvent) event;
 
-            if (eventName.equals("rowSelect") || eventName.equals("rowSelectRadio") || eventName.equals("contextMenu")
-                    || eventName.equals("rowSelectCheckbox") || eventName.equals("rowDblselect")) {
+            if ("rowSelect".equals(eventName) || "rowSelectRadio".equals(eventName) || "contextMenu".equals(eventName)
+                    || "rowSelectCheckbox".equals(eventName) || "rowDblselect".equals(eventName)) {
                 String rowKey = params.get(clientId + "_instantSelectedRowKey");
                 wrapperEvent = new SelectEvent(this, behaviorEvent.getBehavior(), getRowData(rowKey));
             }
-            else if (eventName.equals("rowUnselect") || eventName.equals("rowUnselectCheckbox")) {
+            else if ("rowUnselect".equals(eventName) || "rowUnselectCheckbox".equals(eventName)) {
                 String rowKey = params.get(clientId + "_instantUnselectedRowKey");
                 wrapperEvent = new UnselectEvent(this, behaviorEvent.getBehavior(), getRowData(rowKey));
             }
-            else if (eventName.equals("page") || eventName.equals("virtualScroll") || eventName.equals("liveScroll")) {
+            else if ("page".equals(eventName) || "virtualScroll".equals(eventName) || "liveScroll".equals(eventName)) {
                 int rows = getRowsToRender();
                 int first = Integer.parseInt(params.get(clientId + "_first"));
                 int page = rows > 0 ? (first / rows) : 0;
 
                 wrapperEvent = new PageEvent(this, behaviorEvent.getBehavior(), page);
             }
-            else if (eventName.equals("sort")) {
+            else if ("sort".equals(eventName)) {
                 wrapperEvent = new SortEvent(this, behaviorEvent.getBehavior(), getSortByAsMap());
             }
-            else if (eventName.equals("filter")) {
+            else if ("filter".equals(eventName)) {
                 deferredEvents.put("filter", (AjaxBehaviorEvent) event);
                 return;
             }
-            else if (eventName.equals("rowEdit") || eventName.equals("rowEditCancel") || eventName.equals("rowEditInit")) {
+            else if ("rowEdit".equals(eventName) || "rowEditCancel".equals(eventName) || "rowEditInit".equals(eventName)) {
+                loadLazyDataIfRequired();
+
                 int rowIndex = Integer.parseInt(params.get(clientId + "_rowEditIndex"));
                 setRowIndex(rowIndex);
                 wrapperEvent = new RowEditEvent(this, behaviorEvent.getBehavior(), getRowData());
             }
-            else if (eventName.equals("colResize")) {
+            else if ("colResize".equals(eventName)) {
                 String columnId = params.get(clientId + "_columnId");
                 int width = Double.valueOf(params.get(clientId + "_width")).intValue();
                 int height = Double.valueOf(params.get(clientId + "_height")).intValue();
 
                 wrapperEvent = new ColumnResizeEvent(this, behaviorEvent.getBehavior(), width, height, findColumn(columnId));
             }
-            else if (eventName.equals("toggleSelect")) {
+            else if ("toggleSelect".equals(eventName)) {
                 boolean checked = Boolean.parseBoolean(params.get(clientId + "_checked"));
 
                 wrapperEvent = new ToggleSelectEvent(this, behaviorEvent.getBehavior(), checked);
             }
-            else if (eventName.equals("colReorder")) {
+            else if ("colReorder".equals(eventName)) {
                 wrapperEvent = behaviorEvent;
             }
-            else if (eventName.equals("rowToggle")) {
+            else if ("rowToggle".equals(eventName)) {
+                loadLazyDataIfRequired();
+
                 boolean expansion = params.containsKey(clientId + "_rowExpansion");
                 Visibility visibility = expansion ? Visibility.VISIBLE : Visibility.HIDDEN;
                 String rowIndex = expansion ? params.get(clientId + "_expandedRowIndex") : params.get(clientId + "_collapsedRowIndex");
@@ -366,7 +373,7 @@ public class DataTable extends DataTableBase {
 
                 wrapperEvent = new ToggleEvent(this, behaviorEvent.getBehavior(), visibility, getRowData());
             }
-            else if (eventName.equals("cellEdit") || eventName.equals("cellEditCancel") || eventName.equals("cellEditInit")) {
+            else if ("cellEdit".equals(eventName) || "cellEditCancel".equals(eventName) || "cellEditInit".equals(eventName)) {
                 String[] cellInfo = params.get(clientId + "_cellInfo").split(",");
                 int rowIndex = Integer.parseInt(cellInfo[0]);
                 int cellIndex = Integer.parseInt(cellInfo[1]);
@@ -390,13 +397,13 @@ public class DataTable extends DataTableBase {
 
                 wrapperEvent = new CellEditEvent(this, behaviorEvent.getBehavior(), rowIndex, column, rowKey);
             }
-            else if (eventName.equals("rowReorder")) {
+            else if ("rowReorder".equals(eventName)) {
                 int fromIndex = Integer.parseInt(params.get(clientId + "_fromIndex"));
                 int toIndex = Integer.parseInt(params.get(clientId + "_toIndex"));
 
                 wrapperEvent = new ReorderEvent(this, behaviorEvent.getBehavior(), fromIndex, toIndex);
             }
-            else if (eventName.equals("tap") || eventName.equals("taphold")) {
+            else if ("tap".equals(eventName) || "taphold".equals(eventName)) {
                 String rowkey = params.get(clientId + "_rowkey");
                 wrapperEvent = new SelectEvent(this, behaviorEvent.getBehavior(), getRowData(rowkey));
             }
@@ -427,6 +434,12 @@ public class DataTable extends DataTableBase {
         }
 
         return false;
+    }
+
+    public void loadLazyDataIfRequired() {
+        if (isLazy() && ((LazyDataModel) getValue()).getWrappedData() == null) {
+            loadLazyData();
+        }
     }
 
     public void loadLazyData() {
@@ -693,7 +706,7 @@ public class DataTable extends DataTableBase {
             return this.columns;
         }
 
-        List<UIColumn> columns = initColumns();
+        List<UIColumn> columns = collectColumns();
 
         // lets cache it only when RENDER_RESPONSE is reached, the columns might change before reaching that phase
         // see https://github.com/primefaces/primefaces/issues/2110
@@ -730,8 +743,7 @@ public class DataTable extends DataTableBase {
     }
 
     public boolean isMultiSort() {
-        String sortMode = getSortMode();
-        return sortMode != null && sortMode.equals("multiple");
+        return "multiple".equals(getSortMode());
     }
 
     public String resolveSelectionMode() {
@@ -743,7 +755,7 @@ public class DataTable extends DataTableBase {
             selectionMode = tableSelectionMode;
         }
         else if (columnSelectionMode != null) {
-            selectionMode = columnSelectionMode.equals("single") ? "radio" : "checkbox";
+            selectionMode = "single".equals(columnSelectionMode) ? "radio" : "checkbox";
         }
 
         return selectionMode;
@@ -752,14 +764,6 @@ public class DataTable extends DataTableBase {
     @Override
     protected boolean requiresColumns() {
         return true;
-    }
-
-    public Columns getDynamicColumns() {
-        return dynamicColumns;
-    }
-
-    public void setDynamicColumns(Columns value) {
-        dynamicColumns = value;
     }
 
     @Override
@@ -879,22 +883,22 @@ public class DataTable extends DataTableBase {
 
     @Override
     public boolean isDefaultSort() {
-        return getSortByAsMap() != null && Boolean.TRUE.equals(getStateHelper().get(InternalPropertyKeys.defaultSort.name()));
+        return getSortByAsMap() != null && Boolean.TRUE.equals(getStateHelper().get(InternalPropertyKeys.defaultSort));
     }
 
     @Override
     public void setDefaultSort(boolean defaultSort) {
-        getStateHelper().put(InternalPropertyKeys.defaultSort.name(), defaultSort);
+        getStateHelper().put(InternalPropertyKeys.defaultSort, defaultSort);
     }
 
     @Override
     public boolean isDefaultFilter() {
-        return Boolean.TRUE.equals(getStateHelper().get(InternalPropertyKeys.defaultFilter.name()));
+        return Boolean.TRUE.equals(getStateHelper().get(InternalPropertyKeys.defaultFilter));
     }
 
     @Override
     public void setDefaultFilter(boolean defaultFilter) {
-        getStateHelper().put(InternalPropertyKeys.defaultFilter.name(), defaultFilter);
+        getStateHelper().put(InternalPropertyKeys.defaultFilter, defaultFilter);
     }
 
     public Set<Integer> getExpandedRowsSet() {
@@ -916,12 +920,12 @@ public class DataTable extends DataTableBase {
         return expandedRowsSet;
     }
 
-    public List findOrderedColumns(String columnOrder) {
+    public List<UIColumn> findOrderedColumns(String columnOrder) {
         FacesContext context = getFacesContext();
-        List orderedColumns = null;
+        List<UIColumn> orderedColumns = null;
 
         if (columnOrder != null) {
-            orderedColumns = new ArrayList();
+            orderedColumns = new ArrayList<>();
 
             String[] order = columnOrder.split(",");
             String separator = String.valueOf(UINamingContainer.getSeparatorChar(context));
@@ -930,7 +934,7 @@ public class DataTable extends DataTableBase {
 
                 for (UIComponent child : getChildren()) {
                     if (child instanceof Column && child.getClientId(context).equals(columnId)) {
-                        orderedColumns.add(child);
+                        orderedColumns.add((UIColumn) child);
                         break;
                     }
                     else if (child instanceof Columns) {
@@ -940,7 +944,7 @@ public class DataTable extends DataTableBase {
                             String[] ids = columnId.split(separator);
                             int index = Integer.parseInt(ids[ids.length - 1]);
 
-                            orderedColumns.add(new DynamicColumn(index, (Columns) child, (columnsClientId + separator + index)));
+                            orderedColumns.add(new DynamicColumn(index, (Columns) child, context));
                             break;
                         }
 
@@ -985,6 +989,8 @@ public class DataTable extends DataTableBase {
 
     @Override
     public Object saveState(FacesContext context) {
+        resetDynamicColumns();
+
         // reset component for MyFaces view pooling
         if (deferredEvents != null) {
             deferredEvents.clear();
@@ -993,7 +999,6 @@ public class DataTable extends DataTableBase {
         selectedRowKeys = new ArrayList<>();
         isRowKeyRestored = false;
         columns = null;
-        dynamicColumns = null;
         expandedRowsSet = null;
 
         return super.saveState(context);
@@ -1023,14 +1028,6 @@ public class DataTable extends DataTableBase {
         super.preEncode(context);
     }
 
-    private void resetDynamicColumns() {
-        Columns dynamicCols = getDynamicColumns();
-        if (dynamicCols != null && isNestedWithinIterator()) {
-            dynamicCols.setRowIndex(-1);
-            setColumns(null);
-        }
-    }
-
     @Override
     public void restoreMultiViewState() {
         DataTableState ts = getMultiViewState(false);
@@ -1054,9 +1051,7 @@ public class DataTable extends DataTableBase {
                 isRowKeyRestored = true;
             }
 
-            setColumns(findOrderedColumns(ts.getOrderedColumnsAsString()));
-            setResizableColumnsAsMap(ts.getResizableColumns());
-            setVisibleColumnsAsMap(ts.getVisibleColumns());
+            setColumnMeta(ts.getColumnMeta());
         }
     }
 
@@ -1083,22 +1078,22 @@ public class DataTable extends DataTableBase {
 
     @Override
     public Map<String, SortMeta> getSortByAsMap() {
-        return ComponentUtils.computeIfAbsent(getStateHelper(), InternalPropertyKeys.sortByAsMap.name(), () -> initSortBy(getFacesContext()));
+        return ComponentUtils.computeIfAbsent(getStateHelper(), InternalPropertyKeys.sortByAsMap, () -> initSortBy(getFacesContext()));
     }
 
     @Override
     public void setSortByAsMap(Map<String, SortMeta> sortBy) {
-        getStateHelper().put(InternalPropertyKeys.sortByAsMap.name(), sortBy);
+        getStateHelper().put(InternalPropertyKeys.sortByAsMap, sortBy);
     }
 
     @Override
     public Map<String, FilterMeta> getFilterByAsMap() {
-        return ComponentUtils.eval(getStateHelper(), InternalPropertyKeys.filterByAsMap.name(), Collections::emptyMap);
+        return ComponentUtils.eval(getStateHelper(), InternalPropertyKeys.filterByAsMap, Collections::emptyMap);
     }
 
     @Override
     public void setFilterByAsMap(Map<String, FilterMeta> sortBy) {
-        getStateHelper().put(InternalPropertyKeys.filterByAsMap.name(), sortBy);
+        getStateHelper().put(InternalPropertyKeys.filterByAsMap, sortBy);
     }
 
     @Override
@@ -1108,26 +1103,32 @@ public class DataTable extends DataTableBase {
 
     @Override
     public boolean isFilterByAsMapDefined() {
-        return getStateHelper().get(InternalPropertyKeys.filterByAsMap.name()) != null;
+        return getStateHelper().get(InternalPropertyKeys.filterByAsMap) != null;
     }
 
     @Override
-    public Map<String, Boolean> getVisibleColumnsAsMap() {
-        return ComponentUtils.eval(getStateHelper(), InternalPropertyKeys.visibleColumnsAsMap.name(), Collections::emptyMap);
+    public Map<String, ColumnMeta> getColumnMeta() {
+        Map<String, ColumnMeta> value =
+                (Map<String, ColumnMeta>) getStateHelper().get(InternalPropertyKeys.columnMeta);
+        if (value == null) {
+            value = new HashMap<>();
+            setColumnMeta(value);
+        }
+        return value;
     }
 
     @Override
-    public void setVisibleColumnsAsMap(Map<String, Boolean> visibleColumnsAsMap) {
-        getStateHelper().put(InternalPropertyKeys.visibleColumnsAsMap.name(), visibleColumnsAsMap);
+    public void setColumnMeta(Map<String, ColumnMeta> columnMeta) {
+        getStateHelper().put(InternalPropertyKeys.columnMeta, columnMeta);
     }
 
     @Override
-    public Map<String, String> getResizableColumnsAsMap() {
-        return ComponentUtils.eval(getStateHelper(), InternalPropertyKeys.resizableColumnsAsMap.name(), Collections::emptyMap);
+    public String getWidth() {
+        return (String) getStateHelper().eval(InternalPropertyKeys.width, null);
     }
 
     @Override
-    public void setResizableColumnsAsMap(Map<String, String> resizableColumnsAsMap) {
-        getStateHelper().put(InternalPropertyKeys.resizableColumnsAsMap.name(), resizableColumnsAsMap);
+    public void setWidth(String width) {
+        getStateHelper().put(InternalPropertyKeys.width, width);
     }
 }

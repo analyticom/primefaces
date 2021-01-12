@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2009-2020 PrimeTek
+ * Copyright (c) 2009-2021 PrimeTek
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ import javax.faces.model.SelectItem;
 
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.api.UITable;
 import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.column.Column;
 import org.primefaces.component.columngroup.ColumnGroup;
@@ -51,11 +52,11 @@ import org.primefaces.component.row.Row;
 import org.primefaces.component.subtable.SubTable;
 import org.primefaces.component.summaryrow.SummaryRow;
 import org.primefaces.event.data.PostRenderEvent;
+import org.primefaces.model.ColumnMeta;
 import org.primefaces.model.SortMeta;
 import org.primefaces.model.SortOrder;
 import org.primefaces.renderkit.DataRenderer;
 import org.primefaces.util.*;
-import org.primefaces.component.api.UITable;
 
 public class DataTableRenderer extends DataRenderer {
 
@@ -143,10 +144,7 @@ public class DataTableRenderer extends DataRenderer {
             table.calculateFirst();
         }
 
-        Columns dynamicCols = table.getDynamicColumns();
-        if (dynamicCols != null) {
-            dynamicCols.setRowIndex(-1);
-        }
+        table.resetDynamicColumns();
     }
 
     protected void encodeScript(FacesContext context, DataTable table) throws IOException {
@@ -163,6 +161,7 @@ public class DataTableRenderer extends DataRenderer {
 
         //Selection
         wb.attr("selectionMode", selectionMode, null)
+                .attr("selectionPageOnly", table.isSelectionPageOnly(), true)
                 .attr("rowSelectMode", table.getRowSelectMode(), "new")
                 .attr("nativeElements", table.isNativeElements(), false)
                 .attr("rowSelector", table.getRowSelector(), null)
@@ -300,7 +299,7 @@ public class DataTableRenderer extends DataRenderer {
 
         encodeFacet(context, table, table.getHeader(), DataTable.HEADER_CLASS);
 
-        if (hasPaginator && !paginatorPosition.equalsIgnoreCase("bottom")) {
+        if (hasPaginator && !"bottom".equalsIgnoreCase(paginatorPosition)) {
             encodePaginatorMarkup(context, table, "top");
         }
 
@@ -311,7 +310,7 @@ public class DataTableRenderer extends DataRenderer {
             encodeRegularTable(context, table);
         }
 
-        if (hasPaginator && !paginatorPosition.equalsIgnoreCase("top")) {
+        if (hasPaginator && !"top".equalsIgnoreCase(paginatorPosition)) {
             encodePaginatorMarkup(context, table, "bottom");
         }
 
@@ -322,7 +321,7 @@ public class DataTableRenderer extends DataRenderer {
         }
 
         if (table.isDraggableColumns()) {
-            encodeStateHolder(context, table, table.getClientId(context) + "_columnOrder", null);
+            encodeStateHolder(context, table, table.getClientId(context) + "_columnOrder", table.getOrderedColumnKeys());
         }
 
         if (scrollable) {
@@ -330,7 +329,7 @@ public class DataTableRenderer extends DataRenderer {
         }
 
         if (resizable) {
-            encodeStateHolder(context, table, table.getClientId(context) + "_resizableColumnState", table.getResizableColumnsAsString());
+            encodeStateHolder(context, table, table.getClientId(context) + "_resizableColumnState", table.getColumnsWidthForClientSide());
         }
 
         if (table.getRowExpansion() != null) {
@@ -349,9 +348,7 @@ public class DataTableRenderer extends DataRenderer {
         String tableStyle = table.getTableStyle();
 
         if (table.isResizableColumns()) {
-            Map<String, String> resizableColsMap = table.getResizableColumnsAsMap();
-            String width = resizableColsMap.get(table.getClientId(context) + "_tableWidthState");
-
+            String width = table.getWidth();
             if (width != null) {
                 if (tableStyle != null) {
                     tableStyle = tableStyle + ";width:" + width + "px";
@@ -572,20 +569,22 @@ public class DataTableRenderer extends DataRenderer {
             return;
         }
 
+        ColumnMeta columnMeta = table.getColumnMeta().get(column.getColumnKey());
+
         ResponseWriter writer = context.getResponseWriter();
         String clientId = column.getContainerClientId(context);
 
         boolean sortable = table.isColumnSortable(context, column);
         boolean filterable = table.isColumnFilterable(column);
         String selectionMode = column.getSelectionMode();
-        String sortIcon = null;
+        SortMeta sortMeta = null;
         boolean resizable = table.isResizableColumns() && column.isResizable();
         boolean draggable = table.isDraggableColumns() && column.isDraggable();
-        int priority = column.getPriority();
+        int responsivePriority = column.getResponsivePriority();
 
         boolean columnVisible = column.isVisible();
-        if (table.getVisibleColumnsAsMap().containsKey(column.getColumnKey())) {
-            columnVisible = table.getVisibleColumnsAsMap().get(column.getColumnKey());
+        if (columnMeta != null && columnMeta.getVisible() != null) {
+            columnVisible = columnMeta.getVisible();
         }
 
         String columnClass = getStyleClassBuilder(context)
@@ -598,13 +597,12 @@ public class DataTableRenderer extends DataRenderer {
                 .add(!column.isToggleable(), DataTable.STATIC_COLUMN_CLASS)
                 .add(!columnVisible, DataTable.HIDDEN_COLUMN_CLASS)
                 .add(column.getStyleClass())
-                .add(priority > 0, "ui-column-p-" + priority)
+                .add(responsivePriority > 0, "ui-column-p-" + responsivePriority)
                 .build();
 
         if (sortable) {
-            SortMeta s = table.getSortByAsMap().get(column.getColumnKey());
-            sortIcon = resolveDefaultSortIcon(s);
-            if (s.isActive()) {
+            sortMeta = table.getSortByAsMap().get(column.getColumnKey());
+            if (sortMeta.isActive()) {
                 columnClass += " ui-state-active";
             }
         }
@@ -612,8 +610,8 @@ public class DataTableRenderer extends DataRenderer {
         String style = column.getStyle();
         String width = column.getWidth();
 
-        if (resizable && table.getResizableColumnsAsMap().containsKey(column.getColumnKey())) {
-            width = table.getResizableColumnsAsMap().get(column.getColumnKey());
+        if (columnMeta != null && columnMeta.getWidth() != null) {
+            width = columnMeta.getWidth();
         }
 
         if (width != null) {
@@ -651,23 +649,23 @@ public class DataTableRenderer extends DataRenderer {
         if (filterable) {
             String filterPosition = column.getFilterPosition();
 
-            if (filterPosition.equals("bottom")) {
-                encodeColumnHeaderContent(context, table, column, sortIcon);
+            if ("bottom".equals(filterPosition)) {
+                encodeColumnHeaderContent(context, table, column, sortMeta);
                 encodeFilter(context, table, column);
             }
-            else if (filterPosition.equals("top")) {
+            else if ("top".equals(filterPosition)) {
                 encodeFilter(context, table, column);
-                encodeColumnHeaderContent(context, table, column, sortIcon);
+                encodeColumnHeaderContent(context, table, column, sortMeta);
             }
             else {
                 throw new FacesException(filterPosition + " is an invalid option for filterPosition, valid values are 'bottom' or 'top'.");
             }
         }
         else {
-            encodeColumnHeaderContent(context, table, column, sortIcon);
+            encodeColumnHeaderContent(context, table, column, sortMeta);
         }
 
-        if (selectionMode != null && selectionMode.equalsIgnoreCase("multiple")) {
+        if (selectionMode != null && "multiple".equalsIgnoreCase(selectionMode)) {
             encodeCheckbox(context, table, false, false, HTML.CHECKBOX_ALL_CLASS, true);
         }
 
@@ -687,7 +685,8 @@ public class DataTableRenderer extends DataRenderer {
         return sortIcon;
     }
 
-    protected void encodeColumnHeaderContent(FacesContext context, DataTable table, UIColumn column, String sortIcon) throws IOException {
+    protected void encodeColumnHeaderContent(FacesContext context, DataTable table, UIColumn column,
+                SortMeta sortMeta) throws IOException {
         ResponseWriter writer = context.getResponseWriter();
 
         UIComponent header = column.getFacet("header");
@@ -710,10 +709,19 @@ public class DataTableRenderer extends DataRenderer {
 
         writer.endElement("span");
 
-        if (sortIcon != null) {
-            writer.startElement("span", null);
-            writer.writeAttribute("class", sortIcon, null);
-            writer.endElement("span");
+        if (sortMeta != null) {
+            String sortIcon = resolveDefaultSortIcon(sortMeta);
+            if (sortIcon != null) {
+                writer.startElement("span", null);
+                writer.writeAttribute("class", sortIcon, null);
+                writer.endElement("span");
+
+                if (table.isMultiSort()) {
+                    writer.startElement("span", null);
+                    writer.writeAttribute("class", DataTable.SORTABLE_PRIORITY_CLASS, null);
+                    writer.endElement("span");
+                }
+            }
         }
     }
 
@@ -894,24 +902,26 @@ public class DataTableRenderer extends DataRenderer {
             return;
         }
 
+        ColumnMeta columnMeta = table.getColumnMeta().get(column.getColumnKey());
+
         ResponseWriter writer = context.getResponseWriter();
 
-        int priority = column.getPriority();
+        int responsivePriority = column.getResponsivePriority();
         String style = column.getStyle();
         String styleClass = column.getStyleClass();
         styleClass = styleClass == null ? DataTable.COLUMN_FOOTER_CLASS : DataTable.COLUMN_FOOTER_CLASS + " " + styleClass;
 
         boolean columnVisible = column.isVisible();
-        if (table.getVisibleColumnsAsMap().containsKey(column.getColumnKey())) {
-            columnVisible = table.getVisibleColumnsAsMap().get(column.getColumnKey());
+        if (columnMeta != null && columnMeta.getVisible() != null) {
+            columnVisible = columnMeta.getVisible();
         }
 
         if (!columnVisible) {
             styleClass = styleClass + " " + DataTable.HIDDEN_COLUMN_CLASS;
         }
 
-        if (priority > 0) {
-            styleClass = styleClass + " ui-column-p-" + priority;
+        if (responsivePriority > 0) {
+            styleClass = styleClass + " ui-column-p-" + responsivePriority;
         }
 
         writer.startElement("td", null);
@@ -1127,12 +1137,9 @@ public class DataTableRenderer extends DataRenderer {
         SortMeta sort = table.getHighestPriorityActiveSortMeta();
         boolean encodeHeaderRow = headerRow != null && headerRow.isEnabled() && sort != null;
         boolean encodeSummaryRow = (summaryRow != null && sort != null);
-        Columns dynamicCols = table.getDynamicColumns();
 
         for (int i = first; i < last; i++) {
-            if (dynamicCols != null) {
-                dynamicCols.setRowIndex(-1);
-            }
+            table.resetDynamicColumns();
 
             table.setRowIndex(i);
             if (!table.isRowAvailable()) {
@@ -1243,13 +1250,13 @@ public class DataTableRenderer extends DataRenderer {
             UIColumn column = columns.get(i);
 
             if (column instanceof Column) {
-                encodeCell(context, table, column, clientId, selected);
+                encodeCell(context, table, column, clientId, selected, rowIndex);
             }
             else if (column instanceof DynamicColumn) {
                 DynamicColumn dynamicColumn = (DynamicColumn) column;
                 dynamicColumn.applyModel();
 
-                encodeCell(context, table, dynamicColumn, null, false);
+                encodeCell(context, table, dynamicColumn, null, false, rowIndex);
             }
         }
 
@@ -1262,21 +1269,24 @@ public class DataTableRenderer extends DataRenderer {
         return true;
     }
 
-    protected void encodeCell(FacesContext context, DataTable table, UIColumn column, String clientId, boolean selected) throws IOException {
+    protected void encodeCell(FacesContext context, DataTable table, UIColumn column, String clientId, boolean selected,
+            int rowIndex) throws IOException {
         if (!column.isRendered()) {
             return;
         }
 
+        ColumnMeta columnMeta = table.getColumnMeta().get(column.getColumnKey(table, rowIndex));
+
         boolean columnVisible = column.isVisible();
-        if (table.getVisibleColumnsAsMap().containsKey(column.getColumnKey())) {
-            columnVisible = table.getVisibleColumnsAsMap().get(column.getColumnKey());
+        if (columnMeta != null && columnMeta.getVisible() != null) {
+            columnVisible = columnMeta.getVisible();
         }
 
         ResponseWriter writer = context.getResponseWriter();
         boolean selectionEnabled = column.getSelectionMode() != null;
         CellEditor editor = column.getCellEditor();
         boolean editorEnabled = editor != null && editor.isRendered();
-        int priority = column.getPriority();
+        int responsivePriority = column.getResponsivePriority();
         String style = column.getStyle();
 
         String styleClass = getStyleClassBuilder(context)
@@ -1286,7 +1296,7 @@ public class DataTableRenderer extends DataRenderer {
                 .add(!column.isSelectRow(), DataTable.UNSELECTABLE_COLUMN_CLASS)
                 .add(!columnVisible, DataTable.HIDDEN_COLUMN_CLASS)
                 .add(column.getStyleClass())
-                .add(priority > 0, "ui-column-p-" + priority)
+                .add(responsivePriority > 0, "ui-column-p-" + responsivePriority)
                 .build();
 
         int colspan = column.getColspan();
@@ -1502,10 +1512,10 @@ public class DataTableRenderer extends DataRenderer {
         String selectionMode = column.getSelectionMode();
         boolean disabled = table.isDisabledSelection();
 
-        if (selectionMode.equalsIgnoreCase("single")) {
+        if ("single".equalsIgnoreCase(selectionMode)) {
             encodeRadio(context, table, selected, disabled);
         }
-        else if (selectionMode.equalsIgnoreCase("multiple")) {
+        else if ("multiple".equalsIgnoreCase(selectionMode)) {
             encodeCheckbox(context, table, selected, disabled, HTML.CHECKBOX_CLASS, false);
         }
         else {

@@ -93,6 +93,8 @@
  * @prop {PrimeFaces.widget.TreeTable.SelectionMode} cfg.selectionMode How rows may be selected.
  * @prop {boolean} cfg.stickyHeader Sticky header stays in window viewport during scrolling.
  * @prop {string} cfg.editInitEvent Event that triggers row/cell editing.
+ * @prop {boolean} cfg.saveOnCellBlur Saves the changes in cell editing on blur, when set to false changes are
+ * discarded.
  */
 PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
 
@@ -246,7 +248,8 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
      * Clear the filter input of this tree table and shows all rows again.
      */
     clearFilters: function() {
-        columnFilters = this.thead.find('> tr > th.ui-filter-column > .ui-column-filter').val('');
+        this.thead.find('> tr > th.ui-filter-column > .ui-column-filter').val('');
+        this.thead.find('> tr > th.ui-filter-column > .ui-column-customfilter :input').val('');
         $(this.jqId + '\\:globalFilter').val('');
         this.filter();
     },
@@ -543,6 +546,8 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
 
             $this.sort(columnHeader, sortOrder, $this.cfg.multiSort && metaKey);
         });
+
+        $this.updateSortPriorityIndicators();
     },
 
     /**
@@ -640,7 +645,8 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
      */
     bindEditEvents: function() {
         var $this = this;
-        this.cfg.cellSeparator = this.cfg.cellSeparator||' ';
+        this.cfg.cellSeparator = this.cfg.cellSeparator||' ',
+        this.cfg.saveOnCellBlur = (this.cfg.saveOnCellBlur === false) ? false : true;
 
         if(this.cfg.editMode === 'row') {
             var rowEditorSelector = '> tr > td > div.ui-row-editor';
@@ -687,10 +693,18 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
 
             $(document).off('click.treetable-cell-blur' + this.id)
                         .on('click.treetable-cell-blur' + this.id, function(e) {
-                            if((!$this.incellClick && $this.currentCell && !$this.contextMenuClick)) {
-                                $this.saveCell($this.currentCell);
+                            var target = $(e.target);
+                            if(!$this.incellClick && (target.is('.ui-input-overlay') || target.closest('.ui-input-overlay').length || target.closest('.ui-datepicker-buttonpane').length)) {
+                                $this.incellClick = true;
                             }
-
+                            
+                            if(!$this.incellClick && $this.currentCell && !$this.contextMenuClick && !$.datepicker._datepickerShowing && $('.p-datepicker-panel:visible').length === 0) {
+                                if($this.cfg.saveOnCellBlur)
+                                    $this.saveCell($this.currentCell);
+                                else
+                                    $this.doCellEditCancelRequest($this.currentCell);
+                            }
+                            
                             $this.incellClick = false;
                             $this.contextMenuClick = false;
                         });
@@ -744,6 +758,8 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
                                 $(PrimeFaces.escapeClientId(columnHeader.attr('id') + '_clone')).attr('aria-sort', 'other')
                                     .attr('aria-label', $this.getSortMessage(ariaLabel, $this.ascMessage));
                             }
+
+                            $this.updateSortPriorityIndicators();
                         }
                     });
 
@@ -2004,7 +2020,10 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
         var $this = this;
 
         if(this.currentCell) {
-            $this.saveCell(this.currentCell);
+            if(this.cfg.saveOnCellBlur)
+                this.saveCell(this.currentCell);
+            else if(!this.currentCell.is(cell))
+                this.doCellEditCancelRequest(this.currentCell);
         }
 
         this.currentCell = cell;
@@ -2121,7 +2140,9 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
         else
             $this.viewMode(cell);
 
-        this.currentCell = null;
+        if(this.cfg.saveOnCellBlur) {
+            this.currentCell = null;
+        }
     },
 
     /**
@@ -2363,5 +2384,31 @@ PrimeFaces.widget.TreeTable = PrimeFaces.widget.DeferredWidget.extend({
         }
 
         return value;
+    },
+    
+    /**
+     * In multi-sort mode this will add number indicators to let the user know the current 
+     * sort order. If only one column is sorted then no indicator is displayed and will
+     * only be displayed once more than one column is sorted.
+     * @private
+     */
+    updateSortPriorityIndicators: function() {
+        var $this = this;
+
+        // remove all indicator numbers first
+        $this.sortableColumns.find('.ui-sortable-column-badge').text('').addClass('ui-helper-hidden');
+
+        // add 1,2,3 etc to columns if more than 1 column is sorted
+        var sortMeta =  $this.sortMeta;
+        if (sortMeta && sortMeta.length > 1) {
+            $this.sortableColumns.each(function() {
+                var id = $(this).attr("id");
+                for (var i = 0; i < sortMeta.length; i++) {
+                    if (sortMeta[i].col == id) {
+                        $(this).find('.ui-sortable-column-badge').text(i + 1).removeClass('ui-helper-hidden');
+                    }
+                }
+            });
+        }
     }
 });

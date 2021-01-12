@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2009-2020 PrimeTek
+ * Copyright (c) 2009-2021 PrimeTek
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,11 @@
  */
 package org.primefaces.component.datatable;
 
-import java.io.Serializable;
+import org.primefaces.component.api.UITableState;
+
 import java.util.List;
-import java.util.Map;
 
-import org.primefaces.model.FilterMeta;
-import org.primefaces.model.SortMeta;
-
-public class DataTableState implements Serializable {
+public class DataTableState extends UITableState {
 
     private static final long serialVersionUID = 1L;
 
@@ -38,17 +35,7 @@ public class DataTableState implements Serializable {
 
     private int rows;
 
-    private Map<String, SortMeta> sortBy;
-
     private List<Object> selectedRowKeys;
-
-    private Map<String, FilterMeta> filterBy;
-
-    private String orderedColumnsAsString;
-
-    private Map<String, Boolean> visibleColumns;
-
-    private Map<String, String> resizableColumns;
 
     public int getFirst() {
         return first;
@@ -66,51 +53,11 @@ public class DataTableState implements Serializable {
         this.rows = rows;
     }
 
-    public Map<String, SortMeta> getSortBy() {
-        return sortBy;
-    }
-
-    public void setSortBy(Map<String, SortMeta> sortBy) {
-        this.sortBy = sortBy;
-    }
-
     public List<Object> getSelectedRowKeys() {
         return selectedRowKeys;
     }
 
     public void setSelectedRowKeys(List<Object> selectedRowKeys) {
         this.selectedRowKeys = selectedRowKeys;
-    }
-
-    public Map<String, FilterMeta> getFilterBy() {
-        return filterBy;
-    }
-
-    public void setFilterBy(Map<String, FilterMeta> filterBy) {
-        this.filterBy = filterBy;
-    }
-
-    public String getOrderedColumnsAsString() {
-        return orderedColumnsAsString;
-    }
-
-    public void setOrderedColumnsAsString(String orderedColumnsAsString) {
-        this.orderedColumnsAsString = orderedColumnsAsString;
-    }
-
-    public Map<String, Boolean> getVisibleColumns() {
-        return visibleColumns;
-    }
-
-    public void setVisibleColumns(Map<String, Boolean> visibleColumns) {
-        this.visibleColumns = visibleColumns;
-    }
-
-    public Map<String, String> getResizableColumns() {
-        return resizableColumns;
-    }
-
-    public void setResizableColumns(Map<String, String> resizableColumns) {
-        this.resizableColumns = resizableColumns;
     }
 }

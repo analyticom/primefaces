@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2009-2020 PrimeTek
+ * Copyright (c) 2009-2021 PrimeTek
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,14 @@
  */
 package org.primefaces.component.treetable;
 
+import org.primefaces.component.api.*;
+import org.primefaces.util.MessageFactory;
+
 import javax.el.MethodExpression;
 import javax.faces.component.behavior.ClientBehaviorHolder;
-import org.primefaces.component.api.MultiViewStateAware;
-
-import org.primefaces.component.api.Pageable;
-import org.primefaces.component.api.PrimeClientBehaviorHolder;
-import org.primefaces.component.api.UITree;
-import org.primefaces.component.api.Widget;
-import org.primefaces.component.api.UITable;
 
 public abstract class TreeTableBase extends UITree implements Widget, ClientBehaviorHolder, PrimeClientBehaviorHolder, Pageable,
-        MultiViewStateAware<TreeTableState>, UITable {
+        UITable<TreeTableState> {
 
     public static final String COMPONENT_FAMILY = "org.primefaces.component";
 
@@ -85,7 +81,8 @@ public abstract class TreeTableBase extends UITree implements Widget, ClientBeha
         multiViewState,
         allowUnsorting,
         sortMode,
-        cloneOnFilter
+        cloneOnFilter,
+        saveOnCellBlur
     }
 
     protected enum InternalPropertyKeys {
@@ -93,8 +90,8 @@ public abstract class TreeTableBase extends UITree implements Widget, ClientBeha
         filterByAsMap,
         defaultSort,
         sortByAsMap,
-        visibleColumnsAsMap,
-        resizableColumnsAsMap;
+        columnMeta,
+        width;
     }
 
     public TreeTableBase() {
@@ -171,7 +168,7 @@ public abstract class TreeTableBase extends UITree implements Widget, ClientBeha
     }
 
     public String getEmptyMessage() {
-        return (String) getStateHelper().eval(PropertyKeys.emptyMessage, "No records found.");
+        return (String) getStateHelper().eval(PropertyKeys.emptyMessage, MessageFactory.getMessage(UIPageableData.EMPTY_MESSAGE));
     }
 
     public void setEmptyMessage(String emptyMessage) {
@@ -475,5 +472,13 @@ public abstract class TreeTableBase extends UITree implements Widget, ClientBeha
 
     public void setCloneOnFilter(boolean cloneOnFilter) {
         getStateHelper().put(PropertyKeys.cloneOnFilter, cloneOnFilter);
+    }
+
+    public boolean isSaveOnCellBlur() {
+        return (Boolean) getStateHelper().eval(PropertyKeys.saveOnCellBlur, true);
+    }
+
+    public void setSaveOnCellBlur(boolean saveOnCellBlur) {
+        getStateHelper().put(PropertyKeys.saveOnCellBlur, saveOnCellBlur);
     }
 }

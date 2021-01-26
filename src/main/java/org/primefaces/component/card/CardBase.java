@@ -32,6 +32,10 @@ public class CardBase extends UIComponentBase {
     public static final String DEFAULT_RENDERER = "org.primefaces.component.CardRenderer";
 
     public enum PropertyKeys {
+        header,
+        title,
+        subtitle,
+        footer,
         style,
         styleClass
     }
@@ -46,18 +50,50 @@ public class CardBase extends UIComponentBase {
     }
 
     public String getStyle() {
-        return (String) getStateHelper().eval(CardBase.PropertyKeys.style, null);
+        return (String) getStateHelper().eval(PropertyKeys.style, null);
     }
 
     public void setStyle(String style) {
-        getStateHelper().put(CardBase.PropertyKeys.style, style);
+        getStateHelper().put(PropertyKeys.style, style);
     }
 
     public String getStyleClass() {
-        return (String) getStateHelper().eval(CardBase.PropertyKeys.styleClass, null);
+        return (String) getStateHelper().eval(PropertyKeys.styleClass, null);
     }
 
     public void setStyleClass(String styleClass) {
-        getStateHelper().put(CardBase.PropertyKeys.styleClass, styleClass);
+        getStateHelper().put(PropertyKeys.styleClass, styleClass);
+    }
+
+    public String getHeader() {
+        return (String) getStateHelper().eval(PropertyKeys.header, null);
+    }
+
+    public void setHeader(String header) {
+        getStateHelper().put(PropertyKeys.header, header);
+    }
+
+    public String getTitle() {
+        return (String) getStateHelper().eval(PropertyKeys.title, null);
+    }
+
+    public void setTitle(String title) {
+        getStateHelper().put(PropertyKeys.title, title);
+    }
+
+    public String getSubtitle() {
+        return (String) getStateHelper().eval(PropertyKeys.subtitle, null);
+    }
+
+    public void setSubtitle(String subtitle) {
+        getStateHelper().put(PropertyKeys.subtitle, subtitle);
+    }
+
+    public String getFooter() {
+        return (String) getStateHelper().eval(PropertyKeys.footer, null);
+    }
+
+    public void setFooter(String footer) {
+        getStateHelper().put(PropertyKeys.footer, footer);
     }
 }

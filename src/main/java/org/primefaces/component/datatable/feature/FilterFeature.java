@@ -35,6 +35,7 @@ import org.primefaces.model.filter.EndsWithFilterConstraint;
 import org.primefaces.model.filter.EqualsFilterConstraint;
 import org.primefaces.model.filter.ExactFilterConstraint;
 import org.primefaces.model.filter.FilterConstraint;
+import org.primefaces.model.filter.FunctionFilterConstraint;
 import org.primefaces.model.filter.GlobalFilterConstraint;
 import org.primefaces.model.filter.GreaterThanEqualsFilterConstraint;
 import org.primefaces.model.filter.GreaterThanFilterConstraint;

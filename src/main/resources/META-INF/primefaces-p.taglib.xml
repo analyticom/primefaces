@@ -10177,6 +10177,12 @@
             <type>java.lang.String</type>
         </attribute>
         <attribute>
+            <description>Global AJAX requests are listened by ajaxStatus component, setting global to false will not trigger ajaxStatus.</description>
+            <name>global</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
             <description>
                 <![CDATA[Method expression to invoke when a file is uploaded.]]>
             </description>
@@ -24819,6 +24825,14 @@
         </attribute>
         <attribute>
             <description>
+                <![CDATA[Boolean value that specifies whether the document should be shielded with a partially transparent mask to require the user to close the Panel before being able to activate any elements in the document. Default is true.]]>
+            </description>
+            <name>modal</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
+            <description>
                 <![CDATA[Position of the sidebar. Default is left.]]>
             </description>
             <name>position</name>
@@ -24830,6 +24844,14 @@
                 <![CDATA[]]>
             </description>
             <name>fullScreen</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
+            <description>
+                <![CDATA[Displays a close icon to hide the overlay, default is true.]]>
+            </description>
+            <name>showCloseIcon</name>
             <required>false</required>
             <type>java.lang.Boolean</type>
         </attribute>
@@ -32202,14 +32224,6 @@
         </attribute>
         <attribute>
             <description>
-                <![CDATA[Defines the image to display.]]>
-            </description>
-            <name>image</name>
-            <required>false</required>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <description>
                 <![CDATA[Size of the element, valid options are "large" and "xlarge".]]>
             </description>
             <name>size</name>
@@ -32226,6 +32240,14 @@
         </attribute>
         <attribute>
             <description>
+                <![CDATA[Dynamically assign contrasting foreground and background colors based on the label. Default is false.]]>
+            </description>
+            <name>dynamicColor</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
+            <description>
                 <![CDATA[Inline style of the component.]]>
             </description>
             <name>style</name>
@@ -32237,6 +32259,22 @@
                 <![CDATA[Style class of the component.]]>
             </description>
             <name>styleClass</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>
+                <![CDATA[Gravatar e-mail address for the profile to be displayed.]]>
+            </description>
+            <name>gravatar</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>
+                <![CDATA[Optional Gravatar configuration for any other Gravatar URL parameters.]]>
+            </description>
+            <name>gravatarConfig</name>
             <required>false</required>
             <type>java.lang.String</type>
         </attribute>

@@ -34,11 +34,13 @@ public abstract class AvatarBase extends UIComponentBase {
     public enum PropertyKeys {
         label,
         icon,
-        image,
         size,
         shape,
+        dynamicColor,
         style,
-        styleClass
+        styleClass,
+        gravatar,
+        gravatarConfig
     }
 
     public AvatarBase() {
@@ -66,14 +68,6 @@ public abstract class AvatarBase extends UIComponentBase {
         getStateHelper().put(PropertyKeys.icon, icon);
     }
 
-    public String getImage() {
-        return (String) getStateHelper().eval(PropertyKeys.image, null);
-    }
-
-    public void setImage(String image) {
-        getStateHelper().put(PropertyKeys.image, image);
-    }
-
     public String getSize() {
         return (String) getStateHelper().eval(PropertyKeys.size, null);
     }
@@ -90,6 +84,14 @@ public abstract class AvatarBase extends UIComponentBase {
         getStateHelper().put(PropertyKeys.shape, shape);
     }
 
+    public boolean isDynamicColor() {
+        return (Boolean) getStateHelper().eval(AvatarBase.PropertyKeys.dynamicColor, false);
+    }
+
+    public void setDynamicColor(boolean dynamicColor) {
+        getStateHelper().put(AvatarBase.PropertyKeys.dynamicColor, dynamicColor);
+    }
+
     public String getStyle() {
         return (String) getStateHelper().eval(PropertyKeys.style, null);
     }
@@ -104,6 +106,22 @@ public abstract class AvatarBase extends UIComponentBase {
 
     public void setStyleClass(String styleClass) {
         getStateHelper().put(PropertyKeys.styleClass, styleClass);
+    }
+
+    public String getGravatar() {
+        return (String) getStateHelper().eval(AvatarBase.PropertyKeys.gravatar, null);
+    }
+
+    public void setGravatar(String gravatar) {
+        getStateHelper().put(AvatarBase.PropertyKeys.gravatar, gravatar);
+    }
+
+    public String getGravatarConfig() {
+        return (String) getStateHelper().eval(AvatarBase.PropertyKeys.gravatarConfig, null);
+    }
+
+    public void setGravatarConfig(String gravatarConfig) {
+        getStateHelper().put(AvatarBase.PropertyKeys.gravatarConfig, gravatarConfig);
     }
 
 }

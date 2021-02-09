@@ -36,7 +36,6 @@ import javax.faces.context.FacesContext;
 
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
-import org.primefaces.component.api.UITable;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.export.CSVOptions;
 import org.primefaces.component.export.ExportConfiguration;
@@ -218,7 +217,7 @@ public class DataTableCSVExporter extends DataTableExporter {
             writer.append(escapeQuotes(value));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            Object value =  UITable.createValueExprFromVarField(context, table.getVar(), column.getField()).getValue(context.getELContext());
+            String value = table.getConvertedFieldValue(context, column);
             writer.append(escapeQuotes(Objects.toString(value, Constants.EMPTY_STRING)));
         }
         else {

@@ -40,13 +40,13 @@ PrimeFaces.widget.CascadeSelect = PrimeFaces.widget.BaseWidget.extend({
         this.items = this.itemsWrapper.find('li.ui-cascadeselect-item');
         this.contents = this.items.children('.ui-cascadeselect-item-content');
         this.cfg.disabled = this.jq.hasClass('ui-state-disabled');
-        this.cfg.appendTo = PrimeFaces.utils.resolveAppendTo(this);
+        this.cfg.appendTo = PrimeFaces.utils.resolveAppendTo(this, this.panel);
         
         if (!this.cfg.disabled) {
             this.bindEvents();
-            this.bindConstantEvents();
         
             PrimeFaces.utils.registerDynamicOverlay(this, this.panel, this.id + '_panel');
+            this.transition = PrimeFaces.utils.registerCSSTransition(this.panel, 'ui-connected-overlay');
         }
     },
     
@@ -200,15 +200,15 @@ PrimeFaces.widget.CascadeSelect = PrimeFaces.widget.BaseWidget.extend({
             this.deactivateItems(parentItem);
         }
     },
-    
+
     /**
-     * Sets up the event listeners that only need to be set up once.
+     * Sets up all panel event listeners
      * @private
      */
-    bindConstantEvents: function() {
+    bindPanelEvents: function() {
         var $this = this;
 
-        PrimeFaces.utils.registerHideOverlayHandler(this, 'mousedown.' + this.id + '_hide', $this.panel,
+        this.hideOverlayHandler = PrimeFaces.utils.registerHideOverlayHandler(this, 'mousedown.' + this.id + '_hide', this.panel,
             function() { return  $this.triggers },
             function(e, eventTarget) {
                 if(!($this.panel.is(eventTarget) || $this.panel.has(eventTarget).length > 0)) {
@@ -216,30 +216,51 @@ PrimeFaces.widget.CascadeSelect = PrimeFaces.widget.BaseWidget.extend({
                 }
             });
 
-        PrimeFaces.utils.registerResizeHandler(this, 'resize.' + this.id + '_hide', $this.panel, function() {
+        this.resizeHandler = PrimeFaces.utils.registerResizeHandler(this, 'resize.' + this.id + '_hide', this.panel, function() {
             $this.hide();
         });
 
-        PrimeFaces.utils.registerConnectedOverlayScrollHandler(this, 'scroll.' + $this.id + '_hide', function() {
+        this.scrollHandler = PrimeFaces.utils.registerConnectedOverlayScrollHandler(this, 'scroll.' + this.id + '_hide', this.jq, function() {
             $this.hide();
         });
+    },
+
+    /**
+     * Unbind all panel event listeners
+     * @private
+     */
+    unbindPanelEvents: function() {
+        if (this.hideOverlayHandler) {
+            this.hideOverlayHandler.unbind();
+        }
+
+        if (this.resizeHandler) {
+            this.resizeHandler.unbind();
+        }
+    
+        if (this.scrollHandler) {
+            this.scrollHandler.unbind();
+        }
     },
 
     /**
      * Brings up the overlay panel with the available options.
      */
     show: function() {
-        this.panel.css({'display':'block', 'opacity':'0', 'pointer-events': 'none'});
-        this.itemsWrapper.css({'overflow': 'scroll'});
+        var $this = this;
 
-        this.alignPanel();
-
-        this.panel.css({'display':'none', 'opacity':'', 'pointer-events': '', 'z-index': PrimeFaces.nextZindex()});
-        this.itemsWrapper.css({'overflow': ''});
-
-        this.panel.show();
-
-        this.input.attr('aria-expanded', true);
+        if (this.transition) {
+            this.transition.show({
+                onEnter: function() {
+                    $this.panel.css('z-index', PrimeFaces.nextZindex());
+                    $this.alignPanel();
+                },
+                onEntered: function() {
+                    $this.input.attr('aria-expanded', true);
+                    $this.bindPanelEvents();
+                }
+            });
+        }
     },
 
     /**
@@ -254,9 +275,18 @@ PrimeFaces.widget.CascadeSelect = PrimeFaces.widget.BaseWidget.extend({
      * Hides the overlay panel with the available options.
      */
     hide: function() {
-        if (this.panel.is(':visible')) {
-            this.panel.css('z-index', '').hide();
-            this.input.attr('aria-expanded', false);
+        if (this.panel.is(':visible') && this.transition) {
+            var $this = this;
+
+            this.transition.hide({
+                onExit: function() {
+                    $this.unbindPanelEvents();
+                },
+                onExited: function() {
+                    $this.panel.css('z-index', '');
+                    $this.input.attr('aria-expanded', false);
+                }
+            });
         }
     },
 
@@ -281,15 +311,19 @@ PrimeFaces.widget.CascadeSelect = PrimeFaces.widget.BaseWidget.extend({
         if (this.panel.parent().is(this.jq)) {
             this.panel.css({
                 left: '0px',
-                top: this.jq.innerHeight() + 'px'
+                top: this.jq.innerHeight() + 'px',
+                'transform-origin': 'center top'
             });
         }
         else {
-            this.panel.css({left:'0px', top:'0px'}).position({
+            this.panel.css({left:'0px', top:'0px', 'transform-origin': 'center top'}).position({
                 my: 'left top'
                 ,at: 'left bottom'
                 ,of: this.jq
                 ,collision: 'flipfit'
+                ,using: function(pos, directions) {
+                    $(this).css('transform-origin', 'center ' + directions.vertical).css(pos);
+                }
             });
         }
     },

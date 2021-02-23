@@ -60,6 +60,7 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
             this.bindEvents();
 
             PrimeFaces.utils.registerDynamicOverlay(this, this.menu, this.id + '_menu');
+            this.transition = PrimeFaces.utils.registerCSSTransition(this.menu, 'ui-connected-overlay');
         }
 
         //pfs metadata
@@ -136,7 +137,23 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
             }
         });
 
-        PrimeFaces.utils.registerHideOverlayHandler(this, 'mousedown.' + this.id + '_hide', $this.menu, null,
+        if(this.cfg.filter) {
+            this.setupFilterMatcher();
+            this.filterInput = this.menu.find('> div.ui-splitbuttonmenu-filter-container > input.ui-splitbuttonmenu-filter');
+            PrimeFaces.skinInput(this.filterInput);
+
+            this.bindFilterEvents();
+        }
+    },
+
+    /**
+     * Sets up all panel event listeners
+     * @private
+     */
+    bindPanelEvents: function() {
+        var $this = this;
+
+        this.hideOverlayHandler = PrimeFaces.utils.registerHideOverlayHandler(this, 'mousedown.' + this.id + '_hide', this.menu, null,
             function(e, eventTarget) {
                 if(!($this.menu.is(eventTarget) || $this.menu.has(eventTarget).length > 0)) {
                     $this.button.removeClass('ui-state-focus ui-state-hover');
@@ -144,16 +161,30 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
                 }
             });
 
-        PrimeFaces.utils.registerResizeHandler(this, 'resize.' + this.id + '_align', $this.menu, function() {
-            $this.alignPanel();
+        this.resizeHandler = PrimeFaces.utils.registerResizeHandler(this, 'resize.' + this.id + '_align', this.menu, function() {
+            $this.hide();
         });
-        
-        if(this.cfg.filter) {
-            this.setupFilterMatcher();
-            this.filterInput = this.menu.find('> div.ui-splitbuttonmenu-filter-container > input.ui-splitbuttonmenu-filter');
-            PrimeFaces.skinInput(this.filterInput);
 
-            this.bindFilterEvents();
+        this.scrollHandler = PrimeFaces.utils.registerConnectedOverlayScrollHandler(this, 'scroll.' + this.id + '_hide', this.jq, function() {
+            $this.hide();
+        });
+    },
+
+    /**
+     * Unbind all panel event listeners
+     * @private
+     */
+    unbindPanelEvents: function() {
+        if (this.hideOverlayHandler) {
+            this.hideOverlayHandler.unbind();
+        }
+
+        if (this.resizeHandler) {
+            this.resizeHandler.unbind();
+        }
+    
+        if (this.scrollHandler) {
+            this.scrollHandler.unbind();
         }
     },
     
@@ -425,16 +456,27 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
      * @private
      */
     show: function() {
-        this.jq.attr('aria-expanded', true);
-        this.alignPanel();
+        var $this = this;
 
-        this.menu.show();
-        
-        if(this.cfg.filter) {
-            this.filterInput.trigger('focus');
-        }
-        else {
-            this.menuButton.trigger('focus');
+        if (this.transition) {
+            this.transition.show({
+                onEnter: function() {
+                    $this.menu.css('z-index', PrimeFaces.nextZindex());
+                    $this.alignPanel();
+                },
+                onEntered: function() {
+                    $this.bindPanelEvents();
+
+                    $this.jq.attr('aria-expanded', true);
+
+                    if ($this.cfg.filter) {
+                        $this.filterInput.trigger('focus');
+                    }
+                    else {
+                        $this.menuButton.trigger('focus');
+                    }
+                }
+            });
         }
     },
 
@@ -443,18 +485,27 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
      * @private
      */
     hide: function() {
-        this.jq.attr('aria-expanded', false);
-        this.menuitems.filter('.ui-state-hover').removeClass('ui-state-hover');
-        this.menuButton.removeClass('ui-state-focus');
+        if (this.transition) {
+            var $this = this;
 
-        this.menu.fadeOut('fast');
+            this.transition.hide({
+                onExit: function() {
+                    $this.unbindPanelEvents();
+                },
+                onExited: function() {
+                    $this.jq.attr('aria-expanded', false);
+                    $this.menuitems.filter('.ui-state-hover').removeClass('ui-state-hover');
+                    $this.menuButton.removeClass('ui-state-focus');
+                }
+            });
+        }
     },
 
     /**
      * Align the overlay panel with the additional buttons actions.
      */
     alignPanel: function() {
-        this.menu.css({left:'', top:'','z-index': PrimeFaces.nextZindex()});
+        this.menu.css({ left:'', top:'', 'transform-origin': 'center top' });
 
         if(this.menu.parent().is(this.jq)) {
             this.menu.css({
@@ -467,6 +518,10 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
                 my: 'left top'
                 ,at: 'left bottom'
                 ,of: this.button
+                ,collision: 'flipfit'
+                ,using: function(pos, directions) {
+                    $(this).css('transform-origin', 'center ' + directions.vertical).css(pos);
+                }
             });
         }
     }

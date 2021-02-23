@@ -10,23 +10,23 @@ if (!PrimeFaces.utils) {
          * Finds the element to which the overlay panel should be appended. If none is specified explicitly, append the
          * panel to the body.
          * @param {PrimeFaces.widget.DynamicOverlayWidget} widget A widget that has a panel to be appended.
+         * @param {JQuery} overlay The DOM element for the overlay.
          * @return {string} The search expression for the element to which the overlay panel should be appended.
          */
-        resolveAppendTo: function(widget) {
+        resolveAppendTo: function(widget, overlay) {
             var dialog = widget.jq[0].closest('.ui-dialog');
-            var panel = widget.panel;
 
-            if (dialog && panel && panel.length) {
+            if (dialog && overlay && overlay.length) {
                 var $dialog = $(dialog);
 
                 //set position as fixed to scroll with dialog
                 if ($dialog.css('position') === 'fixed') {
-                    panel.css('position', 'fixed');
+                    overlay.css('position', 'fixed');
                 }
 
                 //append to body if not already appended by user choice
-                if(!panel.parent().is(document.body)) {
-                    widget.cfg.appendTo = "@(body)"
+                if(!overlay.parent().is(document.body)) {
+                    widget.cfg.appendTo = "@(body)";
                     return widget.cfg.appendTo;
                 }
             }
@@ -38,7 +38,7 @@ if (!PrimeFaces.utils) {
          * Finds the container element to which an overlay widget should be appended. This is either the element
          * specified by the widget configurations's `appendTo` attribute, or the document BODY element otherwise.
          * @param {PrimeFaces.widget.DynamicOverlayWidget} widget A widget to be displayed as an overlay.
-         * @return {JQuery} The container DOM element to which the overlay is to be appended. 
+         * @return {JQuery} The container DOM element to which the overlay is to be appended.
          */
         resolveDynamicOverlayContainer: function(widget) {
             return widget.cfg.appendTo
@@ -48,12 +48,12 @@ if (!PrimeFaces.utils) {
 
         /**
          * Cleanup the `detached` overlay.
-         * 
+         *
          * If you update a component, the overlay is rendered as specified in the component tree (XHTML view), but moved
          * to a different container via JavaScript.
-         * 
+         *
          * This means that after an AJAX update, we now have 2 overlays with the same id:
-         * 
+         *
          * 1. The newly rendered overlay, as a child of the element specified by the component tree (XHTML view)
          * 1. The old, detached overlay, as a child of the element specified by `appendTo` attribute
          *
@@ -118,14 +118,14 @@ if (!PrimeFaces.utils) {
         addModal: function(widget, overlay, tabbablesCallback) {
             var id = widget.id,
                 zIndex = overlay.css('z-index') - 1;
-            
+
             overlay.attr({
                 'role': 'dialog'
                 ,'aria-hidden': false
                 ,'aria-modal': true
                 ,'aria-live': 'polite'
             });
-            
+
             PrimeFaces.utils.preventTabbing(id, zIndex, tabbablesCallback);
 
             if (widget.cfg.blockScroll) {
@@ -214,7 +214,7 @@ if (!PrimeFaces.utils) {
                     'role': ''
                     ,'aria-hidden': true
                     ,'aria-modal': false
-                    ,'aria-live': 'off' 
+                    ,'aria-live': 'off'
                 });
             }
 
@@ -257,13 +257,14 @@ if (!PrimeFaces.utils) {
          * widget.
          *
          * @param {PrimeFaces.widget.BaseWidget} widget An overlay widget instance.
-         * @param {string} hideNamespace A click event with a namspace to listen to, such as `mousedown.widgetId`. 
+         * @param {string} hideNamespace A click event with a namspace to listen to, such as `mousedown.widgetId`.
          * @param {JQuery} overlay The DOM element for the overlay.
          * @param {((event: JQuery.TriggeredEvent) => JQuery) | undefined} resolveIgnoredElementsCallback The callback which
          * resolves the elements to ignore when the user clicks outside the overlay. The `hideCallback` is not invoked
          * when the user clicks on one those elements.
          * @param {(event: JQuery.TriggeredEvent, eventTarget: JQuery) => void} hideCallback A callback that is invoked when the
          * user clicks on an element outside the overlay widget.
+         * @return {() => void} unbind callback handler
          */
         registerHideOverlayHandler: function(widget, hideNamespace, overlay, resolveIgnoredElementsCallback, hideCallback) {
 
@@ -311,6 +312,12 @@ if (!PrimeFaces.utils) {
 
                 hideCallback(e, $eventTarget);
             });
+
+            return {
+                unbind: function() {
+                    $(document).off(hideNamespace);
+                }
+            };
         },
 
         /**
@@ -322,6 +329,7 @@ if (!PrimeFaces.utils) {
          * @param {(event: JQuery.TriggeredEvent) => void} resizeCallback A callback that is invoked when the window is resized.
          * @param {string} [params] Optional CSS selector. If given, the callback is invoked only when the resize event
          * is triggered on an element the given selector.
+         * @return {() => void} unbind callback handler
          */
         registerResizeHandler: function(widget, resizeNamespace, element, resizeCallback, params) {
 
@@ -336,6 +344,12 @@ if (!PrimeFaces.utils) {
 
                 resizeCallback(e);
             });
+
+            return {
+                unbind: function() {
+                    $(window).off(resizeNamespace);
+                }
+            };
         },
 
         /**
@@ -344,7 +358,7 @@ if (!PrimeFaces.utils) {
          * @param {PrimeFaces.widget.DynamicOverlayWidget} widget An overlay widget instance.
          * @param {JQuery} overlay The DOM element for the overlay.
          * @param {string} overlayId The ID of the overlay, usually the widget ID.
-         * @return {JQuery} The overlay that was passed to this function. 
+         * @return {JQuery} The overlay that was passed to this function.
          */
         registerDynamicOverlay: function(widget, overlay, overlayId) {
 
@@ -373,6 +387,7 @@ if (!PrimeFaces.utils) {
          * @param {string} scrollNamespace A scroll event with a namespace, such as `scroll.widgetId`.
          * @param {(event: JQuery.TriggeredEvent) => void} scrollCallback A callback that is invoked when a scroll event
          * occurs on the widget.
+         * @return {() => void} unbind callback handler
          */
         registerScrollHandler: function(widget, scrollNamespace, scrollCallback) {
 
@@ -388,6 +403,12 @@ if (!PrimeFaces.utils) {
             scrollParent.off(scrollNamespace).on(scrollNamespace, function(e) {
                 scrollCallback(e);
             });
+
+            return {
+                unbind: function() {
+                    scrollParent.off(scrollNamespace);
+                }
+            };
         },
 
         /**
@@ -395,16 +416,46 @@ if (!PrimeFaces.utils) {
          * has a connected overlay.
          * @param {PrimeFaces.widget.BaseWidget} widget A widget instance for which to register a scroll handler.
          * @param {string} scrollNamespace A scroll event with a namespace, such as `scroll.widgetId`.
+         * @param {JQuery | undefined} element A DOM element used to find scrollable parents.
          * @param {(event: JQuery.TriggeredEvent) => void} scrollCallback A callback that is invoked when a scroll event
          * occurs on the widget.
+         * @return {() => void} unbind callback handler
          */
-        registerConnectedOverlayScrollHandler: function(widget, scrollNamespace, scrollCallback) {
-            var element = widget.getJQ().get(0);
+        registerConnectedOverlayScrollHandler: function(widget, scrollNamespace, element, scrollCallback) {
+            var scrollableParents = PrimeFaces.utils.getScrollableParents((element || widget.getJQ()).get(0));
+
+            for (var i = 0; i < scrollableParents.length; i++) {
+                var scrollParent = $(scrollableParents[i]);
+
+                widget.addDestroyListener(function() {
+                    scrollParent.off(scrollNamespace);
+                });
+
+                scrollParent.off(scrollNamespace).on(scrollNamespace, function(e) {
+                    scrollCallback(e);
+                });
+            }
+
+            return {
+                unbind: function() {
+                    for (var i = 0; i < scrollableParents.length; i++) {
+                        $(scrollableParents[i]).off(scrollNamespace);
+                    }
+                }
+            };
+        },
+
+        /**
+         * Find scrollable parents (Not document)
+         * @param {JQuery} element An element used to find its scrollable parents.
+         * @return {any[]} the list of scrollable parents.
+         */
+        getScrollableParents: function(element) {
             var scrollableParents = [];
             var getParents = function(element, parents) {
-                return element['parentNode'] === null ? parents : getParents(element.parentNode, parents.concat([element.parentNode]));
+                return element['parentNode'] == null ? parents : getParents(element.parentNode, parents.concat([element.parentNode]));
             };
-            
+
             if (element) {
                 var parents = getParents(element, []);
                 var overflowRegex = /(auto|scroll)/;
@@ -412,7 +463,7 @@ if (!PrimeFaces.utils) {
                     var styleDeclaration = window['getComputedStyle'](node, null);
                     return overflowRegex.test(styleDeclaration.getPropertyValue('overflow')) || overflowRegex.test(styleDeclaration.getPropertyValue('overflowX')) || overflowRegex.test(styleDeclaration.getPropertyValue('overflowY'));
                 };
-    
+
                 for (var i = 0; i < parents.length; i++) {
                     var parent = parents[i];
                     var scrollSelectors = parent.nodeType === 1 && parent.dataset['scrollselectors'];
@@ -426,24 +477,14 @@ if (!PrimeFaces.utils) {
                             }
                         }
                     }
-    
+
                     if (parent.nodeType !== 9 && overflowCheck(parent)) {
                         scrollableParents.push(parent);
                     }
                 }
             }
 
-            for (var i = 0; i < scrollableParents.length; i++) {
-                var scrollParent = $(scrollableParents[i]);
-
-                widget.addDestroyListener(function() {
-                    scrollParent.off(scrollNamespace);
-                });
-    
-                scrollParent.off(scrollNamespace).on(scrollNamespace, function(e) {
-                    scrollCallback(e);
-                });
-            }
+            return scrollableParents;
         },
 
         /**
@@ -474,7 +515,7 @@ if (!PrimeFaces.utils) {
         enableScrolling: function() {
             $(document.body).removeClass('ui-overflow-hidden');
         },
-        
+
         /**
          * Calculates an element offset relative to the current scroll position of the window.
          * @param {JQuery} element An element for which to calculate the scroll position.
@@ -517,24 +558,24 @@ if (!PrimeFaces.utils) {
             var key = e.which,
             keyCode = $.ui.keyCode,
             ignoredKeys = [
-                keyCode.END, 
-                keyCode.HOME, 
-                keyCode.LEFT, 
-                keyCode.RIGHT, 
-                keyCode.UP, 
+                keyCode.END,
+                keyCode.HOME,
+                keyCode.LEFT,
+                keyCode.RIGHT,
+                keyCode.UP,
                 keyCode.DOWN,
-                keyCode.TAB, 
-                16/*Shift*/, 
-                17/*Ctrl*/, 
-                18/*Alt*/, 
+                keyCode.TAB,
+                16/*Shift*/,
+                17/*Ctrl*/,
+                18/*Alt*/,
                 91, 92, 93/*left/right Win/Cmd*/,
-                keyCode.ESCAPE, 
-                keyCode.PAGE_UP, 
+                keyCode.ESCAPE,
+                keyCode.PAGE_UP,
                 keyCode.PAGE_DOWN,
-                19/*pause/break*/, 
-                20/*caps lock*/, 
-                44/*print screen*/, 
-                144/*num lock*/, 
+                19/*pause/break*/,
+                20/*caps lock*/,
+                44/*print screen*/,
+                144/*num lock*/,
                 145/*scroll lock*/];
 
             if (ignoredKeys.indexOf(key) > -1) {
@@ -554,7 +595,7 @@ if (!PrimeFaces.utils) {
 
         /**
          * Helper to open a new URL and if CTRL is held down open in new browser tab.
-         * 
+         *
          * @param {JQuery.TriggeredEvent} event The click event that occurred.
          * @param {JQuery} link The URL anchor link that was clicked.
          */
@@ -573,8 +614,122 @@ if (!PrimeFaces.utils) {
                 }
             }
             event.preventDefault();
-        }
+        },
 
+        /**
+         * Enables CSS and jQuery animation.
+         */
+        enableAnimations: function() {
+            $.fx.off = false;
+            PrimeFaces.animationEnabled = true;
+        },
+
+        /**
+         * Disables CSS and jQuery animation.
+         */
+        disableAnimations: function() {
+            $.fx.off = true;
+            PrimeFaces.animationEnabled = false;
+        },
+
+        /**
+         * CSS Transition method for overlay panels such as SelectOneMenu/SelectCheckboxMenu/Datepicker's panel etc.
+         * @param {JQuery} element An element for which to execute the transition.
+         * @param {string} className Class name used for transition phases.
+         * @return {() => JQuery|null} two callbacks named show and hide. If element or className property is empty/null, it returns null.
+         */
+        registerCSSTransition: function(element, className) {
+            if (element && className != null) {
+                var classNameStates = {
+                   'enter': className + '-enter',
+                   'enterActive': className + '-enter-active',
+                   'enterDone': className + '-enter-done',
+                   'exit': className + '-exit',
+                   'exitActive': className + '-exit-active',
+                   'exitDone': className + '-exit-done'
+                };
+                var callTransitionEvent = function(callbacks, key, param) {
+                    if (callbacks != null && callbacks[key] != null) {
+                        callbacks[key].call(param);
+                    }
+                };
+
+                return {
+                    show: function(callbacks) {
+                        //clear exit state classes
+                        element.removeClass([classNameStates.exit, classNameStates.exitActive, classNameStates.exitDone]);
+
+                        if (element.is(':hidden')) {
+                            if (PrimeFaces.animationEnabled) {
+                                PrimeFaces.animationActive = true;
+                                element.css('display', 'block').addClass(classNameStates.enter);
+                                callTransitionEvent(callbacks, 'onEnter');
+
+                                requestAnimationFrame(function() {
+                                    setTimeout(function() {
+                                        element.addClass(classNameStates.enterActive);
+                                    }, 0);
+
+                                    element.one('transitionrun.css-transition-show', function(event) {
+                                        callTransitionEvent(callbacks, 'onEntering', event);
+                                    }).one('transitioncancel.css-transition-show', function() {
+                                        element.removeClass([classNameStates.enter, classNameStates.enterActive, classNameStates.enterDone]);
+                                        PrimeFaces.animationActive = false;
+                                    }).one('transitionend.css-transition-show', function(event) {
+                                        element.removeClass([classNameStates.enterActive, classNameStates.enter]).addClass(classNameStates.enterDone);
+                                        callTransitionEvent(callbacks, 'onEntered', event);
+                                        PrimeFaces.animationActive = false;
+                                    });
+                                });
+                            }
+                            else {
+                                // animation globally disabled still call downstream callbacks
+                                element.css('display', 'block');
+                                callTransitionEvent(callbacks, 'onEnter');
+                                callTransitionEvent(callbacks, 'onEntering');
+                                callTransitionEvent(callbacks, 'onEntered');
+                            }
+                        }
+                    },
+                    hide: function(callbacks) {
+                        //clear enter state classes
+                        element.removeClass([classNameStates.enter, classNameStates.enterActive, classNameStates.enterDone]);
+
+                        if (element.is(':visible')) {
+                            if (PrimeFaces.animationEnabled) {
+                                PrimeFaces.animationActive = true;
+                                element.addClass(classNameStates.exit);
+                                callTransitionEvent(callbacks, 'onExit');
+
+                                setTimeout(function() {
+                                    element.addClass(classNameStates.exitActive);
+                                }, 0);
+
+                                element.one('transitionrun.css-transition-hide', function(event) {
+                                    callTransitionEvent(callbacks, 'onExiting', event);
+                                }).one('transitioncancel.css-transition-hide', function() {
+                                    element.removeClass([classNameStates.exit, classNameStates.exitActive, classNameStates.exitDone]);
+                                    PrimeFaces.animationActive = false;
+                                }).one('transitionend.css-transition-hide', function(event) {
+                                    element.css('display', 'none').removeClass([classNameStates.exitActive, classNameStates.exit]).addClass(classNameStates.exitDone);
+                                    callTransitionEvent(callbacks, 'onExited', event);
+                                    PrimeFaces.animationActive = false;
+                                });
+                            }
+                            else {
+                                // animation globally disabled still call downstream callbacks
+                                callTransitionEvent(callbacks, 'onExit');
+                                callTransitionEvent(callbacks, 'onExiting');
+                                callTransitionEvent(callbacks, 'onExited');
+                                element.css('display', 'none');
+                            }
+                        }
+                    }
+                };
+            }
+
+            return null;
+        }
     };
 
 }

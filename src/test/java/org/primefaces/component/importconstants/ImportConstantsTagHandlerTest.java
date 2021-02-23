@@ -21,14 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.primefaces.component.toolbar;
+package org.primefaces.component.importconstants;
 
-import javax.faces.application.ResourceDependency;
+import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-@ResourceDependency(library = "primefaces", name = "components.css")
-public class Toolbar extends ToolbarBase {
+public class ImportConstantsTagHandlerTest {
 
-    public static final String COMPONENT_TYPE = "org.primefaces.component.Toolbar";
-
-    public static final String CONTAINER_CLASS = "ui-toolbar ui-widget ui-widget-header ui-corner-all";
+    @Test
+    public void test() {
+        System.err.println(MyConstants.H2);
+        Map<String, Object> constants = ImportConstantsTagHandler.collectConstants(MyConstants.class);
+        Assertions.assertEquals(4, constants.size());
+        Assertions.assertEquals("h1", constants.get("H1"));
+        Assertions.assertEquals("h3", constants.get("H3"));
+        Assertions.assertEquals("i", constants.get("I"));
+        Assertions.assertEquals("h2override", constants.get("H2"));
+    }
+    
+    class MyConstants extends MyConstants2 {
+        public static final String H1 = "h1";
+        public static final String H2 = "h2override";
+    }
+    
+    class MyConstants2 extends MyConstants3 {
+        public static final String H2 = "h2";
+    }
+    
+    class MyConstants3 implements MyInterface {
+        public static final String H3 = "h3";
+    }
+    
+    interface MyInterface {
+        public static final String I = "i";
+    }
 }

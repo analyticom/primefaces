@@ -309,6 +309,9 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
             this.initRowExpansion();
             this.updateExpandedRowsColspan();
         }
+        if(this.cfg.reflow) {
+           this.jq.css('visibility', 'visible');
+        }
     },
 
     /**
@@ -787,7 +790,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         this.rowSelectorForRowClick = this.cfg.rowSelector||'td:not(.ui-column-unselectable),span:not(.ui-c)';
 
         var preselection = $(this.selectionHolder).val();
-        this.selection = (preselection === "") ? [] : preselection.split(',');
+        this.selection = !preselection ? [] : preselection.split(',');
 
         //shift key based range selection
         this.originRowIndex = null;
@@ -962,18 +965,10 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
     bindRowHover: function(selector) {
         this.tbody.off('mouseenter.dataTable mouseleave.dataTable', selector)
                     .on('mouseenter.dataTable', selector, null, function() {
-                        var element = $(this);
-
-                        if(!element.hasClass('ui-state-highlight')) {
-                            element.addClass('ui-state-hover');
-                        }
+                        $(this).addClass('ui-state-hover');
                     })
                     .on('mouseleave.dataTable', selector, null, function() {
-                        var element = $(this);
-
-                        if(!element.hasClass('ui-state-highlight')) {
-                            element.removeClass('ui-state-hover');
-                        }
+                        $(this).removeClass('ui-state-hover');
                     });
     },
 
@@ -995,14 +990,14 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
         }
         else {
             var radioSelector = '> tr.ui-widget-content:not(.ui-datatable-empty-message) > td.ui-selection-column .ui-radiobutton .ui-radiobutton-box';
-            this.tbody.off('click.dataTable mouseover.dataTable mouseout.dataTable', radioSelector)
-                .on('mouseover.dataTable', radioSelector, null, function() {
+            this.tbody.off('click.dataTable mouseenter.dataTable mouseleave.dataTable', radioSelector)
+                .on('mouseenter.dataTable', radioSelector, null, function() {
                     var radio = $(this);
-                    if(!radio.hasClass('ui-state-disabled')&&!radio.hasClass('ui-state-active')) {
+                    if(!radio.hasClass('ui-state-disabled')) {
                         radio.addClass('ui-state-hover');
                     }
                 })
-                .on('mouseout.dataTable', radioSelector, null, function() {
+                .on('mouseleave.dataTable', radioSelector, null, function() {
                     var radio = $(this);
                     radio.removeClass('ui-state-hover');
                 })
@@ -1011,8 +1006,11 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                     checked = radio.hasClass('ui-state-active'),
                     disabled = radio.hasClass('ui-state-disabled');
 
-                    if(!disabled && !checked) {
-                        $this.selectRowWithRadio(radio);
+                    if (!disabled) {
+                        radio.prev().children(':radio').trigger('focus.dataTable');
+                        if (!checked) {
+                            $this.selectRowWithRadio(radio);
+                        }
                     }
                 });
         }
@@ -1023,19 +1021,11 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                 var input = $(this),
                 box = input.parent().next();
 
-                if(input.prop('checked')) {
-                    box.removeClass('ui-state-active');
-                }
-
                 box.addClass('ui-state-focus');
             })
             .on('blur.dataTable', radioInputSelector, null, function() {
                 var input = $(this),
                 box = input.parent().next();
-
-                if(input.prop('checked')) {
-                    box.addClass('ui-state-active');
-                }
 
                 box.removeClass('ui-state-focus');
             })
@@ -1077,13 +1067,13 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
             checkboxSelector = '> tr.ui-widget-content.ui-datatable-selectable > td.ui-selection-column > div.ui-chkbox > div.ui-chkbox-box';
             this.checkAllToggler = this.thead.find('> tr > th.ui-selection-column > div.ui-chkbox.ui-chkbox-all > div.ui-chkbox-box');
 
-            this.checkAllToggler.on('mouseover', function() {
+            this.checkAllToggler.on('mouseenter', function() {
                 var box = $(this);
-                if(!box.hasClass('ui-state-disabled')&&!box.hasClass('ui-state-active')) {
+                if(!box.hasClass('ui-state-disabled')) {
                     box.addClass('ui-state-hover');
                 }
             })
-            .on('mouseout', function() {
+            .on('mouseleave', function() {
                 $(this).removeClass('ui-state-hover');
             })
             .on('click', function() {
@@ -1108,14 +1098,11 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                 }
             });
 
-            this.tbody.off('mouseover.dataTable mouseover.dataTable click.dataTable', checkboxSelector)
-                        .on('mouseover.dataTable', checkboxSelector, null, function() {
-                            var box = $(this);
-                            if(!box.hasClass('ui-state-active')) {
-                                box.addClass('ui-state-hover');
-                            }
+            this.tbody.off('mouseenter.dataTable mouseleave.dataTable click.dataTable', checkboxSelector)
+                        .on('mouseenter.dataTable', checkboxSelector, null, function() {
+                            $(this).addClass('ui-state-hover');
                         })
-                        .on('mouseout.dataTable', checkboxSelector, null, function() {
+                        .on('mouseleave.dataTable', checkboxSelector, null, function() {
                             $(this).removeClass('ui-state-hover');
                         })
                         .on('click.dataTable', checkboxSelector, null, function() {
@@ -1135,10 +1122,6 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                     .on('focus.dataTable', checkboxSelector, null, function() {
                         var input = $(this);
 
-                        if(input.attr('aria-checked') === "true" || input.prop('checked')) {
-                            input.removeClass('ui-state-active');
-                        }
-
                         input.addClass('ui-state-focus');
 
                         $this.focusedRow = input.closest('.ui-datatable-selectable');
@@ -1146,10 +1129,6 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                     })
                     .on('blur.dataTable', checkboxSelector, null, function() {
                         var input = $(this);
-
-                        if(input.attr('aria-checked') === "true" || input.prop('checked')) {
-                            input.addClass('ui-state-active');
-                        }
 
                         input.removeClass('ui-state-focus');
 
@@ -1172,19 +1151,11 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                         var input = $(this);
 
                         if(!input.hasClass('ui-state-disabled')) {
-                            if(input.attr('aria-checked') === "true" || input.prop('checked')) {
-                                input.removeClass('ui-state-active');
-                            }
-
                             input.addClass('ui-state-focus');
                         }
                     })
                     .on('blur.dataTable', function(e) {
                         var input = $(this);
-
-                        if(input.attr('aria-checked') === "true" || input.prop('checked')) {
-                            input.addClass('ui-state-active');
-                        }
 
                         input.removeClass('ui-state-focus');
                     })
@@ -1199,7 +1170,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                             $this.toggleCheckAll();
 
                             if(input.attr('aria-checked') === "true" || input.prop('checked')) {
-                                input.removeClass('ui-state-active').addClass('ui-state-focus');
+                                input.removeClass('ui-state-active');
                             }
                         }
                     });
@@ -1604,6 +1575,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      * @return {PrimeFaces.widget.DataTable.WidthInfo} The width information of the given column.
      */
     getColumnWidthInfo: function(col, isIncludeResizeableState) {
+        var $this = this;
         var width, isOuterWidth;
 
         if(isIncludeResizeableState && this.resizableState) {
@@ -2097,7 +2069,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                                         .find('.ui-sortable-column-icon').removeClass('ui-icon-triangle-1-n ui-icon-triangle-1-s');
                         }
 
-                        columnHeader.data('sortorder', order).removeClass('ui-state-hover').addClass('ui-state-active');
+                        columnHeader.data('sortorder', order).addClass('ui-state-active');
                         var sortIcon = columnHeader.find('.ui-sortable-column-icon'),
                         ariaLabel = columnHeader.attr('aria-label');
 
@@ -2528,7 +2500,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      * @param {JQuery} row Row to highlight.
      */
     highlightRow: function(row) {
-        row.removeClass('ui-state-hover').addClass('ui-state-highlight').attr('aria-selected', true);
+        row.addClass('ui-state-highlight').attr('aria-selected', true);
     },
 
     /**
@@ -2537,7 +2509,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      * @param {JQuery} row Row to unhighlight.
      */
     unhighlightRow: function(row) {
-        row.removeClass('ui-state-highlight ui-state-hover').attr('aria-selected', false);
+        row.removeClass('ui-state-highlight').attr('aria-selected', false);
     },
 
     /**
@@ -2806,9 +2778,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      * @param {JQuery} checkbox A checkbox to select.
      */
     selectCheckbox: function(checkbox) {
-        if(!checkbox.hasClass('ui-state-focus')) {
-            checkbox.addClass('ui-state-active');
-        }
+        checkbox.addClass('ui-state-active');
 
         if (this.cfg.nativeElements) {
             checkbox.prop('checked', true);
@@ -2842,10 +2812,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
      * @param {JQuery} radio A radio button to select.
      */
     selectRadio: function(radio){
-        radio.removeClass('ui-state-hover');
-        if(!radio.hasClass('ui-state-focus')) {
-            radio.addClass('ui-state-active');
-        }
+        radio.addClass('ui-state-active');
         radio.children('.ui-radiobutton-icon').addClass('ui-icon-bullet').removeClass('ui-icon-blank');
         radio.prev().children('input').prop('checked', true);
     },
@@ -3078,11 +3045,16 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                         });
 
             // GitHub #433 Allow ENTER to submit ESC to cancel row editor
-            $(document).off("keydown", "tr.ui-row-editing")
-                        .on("keydown", "tr.ui-row-editing", function(e) {
+            $(document).off("keydown.datatable", "tr.ui-row-editing")
+                        .on("keydown.datatable", "tr.ui-row-editing", function(e) {
                             var keyCode = $.ui.keyCode;
                             switch (e.which) {
                                 case keyCode.ENTER:
+                                    var target = $(e.target);
+                                    // GitHub #7028
+                                    if(target.is("textarea")) {
+                                         return true;
+                                    }
                                     $(this).closest("tr").find(".ui-row-editor-check").trigger("click");
                                     return false; // prevents executing other event handlers (adding new row to the table)
                                 case keyCode.ESCAPE:
@@ -3189,7 +3161,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
 
         var inputs=row.find(':input:enabled');
         if (inputs.length > 0) {
-            inputs.first().triggerHandler('focus');
+            inputs.first().trigger('focus');
         }
     },
 
@@ -3206,7 +3178,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
             cellIndex = (this.scrollTbody.is(cell.closest('tbody'))) ? (cellIndex + $this.cfg.frozenColumns) : cellIndex;
         }
 
-        if (!rowMeta || !rowMeta.index) {
+        if (rowMeta === undefined || rowMeta.index === undefined) {
             return null;
         }
         var cellInfo = rowMeta.index + ',' + cellIndex;
@@ -3328,8 +3300,8 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
             displayContainer.hide();
             inputContainer.show();
             var input = inputs.eq(0);
-            input.triggerHandler('focus');
-            input.triggerHandler('select');
+            input.trigger('focus');
+            input.trigger('select');
 
             //metadata
             if(multi) {
@@ -3364,6 +3336,10 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                         input = $(this);
 
                         if(key === keyCode.ENTER) {
+                            // GitHub #7028
+                            if(input.is("textarea")) {
+                                return true;
+                            }
                             $this.saveCell(cell);
                             $this.currentCell = null;
 
@@ -5398,6 +5374,7 @@ PrimeFaces.widget.FrozenDataTable = PrimeFaces.widget.DataTable.extend({
      * @inheritdoc
      */
     fixColumnWidths: function() {
+        var $this = this;
         if(!this.columnWidthsFixed) {
 
             if(this.cfg.scrollable) {
@@ -5532,24 +5509,20 @@ PrimeFaces.widget.FrozenDataTable = PrimeFaces.widget.DataTable.extend({
     bindRowHover: function(selector) {
         var $this = this;
 
-        this.tbody.off('mouseover.datatable mouseout.datatable', selector)
-                    .on('mouseover.datatable', selector, null, function() {
+        this.tbody.off('mouseenter.datatable mouseleave.datatable', selector)
+                    .on('mouseenter.datatable', selector, null, function() {
                         var row = $(this),
                         twinRow = $this.getTwinRow(row);
 
-                        if(!row.hasClass('ui-state-highlight')) {
-                            row.addClass('ui-state-hover');
-                            twinRow.addClass('ui-state-hover');
-                        }
+                        row.addClass('ui-state-hover');
+                        twinRow.addClass('ui-state-hover');
                     })
-                    .on('mouseout.datatable', selector, null, function() {
+                    .on('mouseleave.datatable', selector, null, function() {
                         var row = $(this),
                         twinRow = $this.getTwinRow(row);
 
-                        if(!row.hasClass('ui-state-highlight')) {
-                            row.removeClass('ui-state-hover');
-                            twinRow.removeClass('ui-state-hover');
-                        }
+                        row.removeClass('ui-state-hover');
+                        twinRow.removeClass('ui-state-hover');
                     });
     },
 
